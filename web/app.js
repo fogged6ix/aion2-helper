@@ -26,19 +26,21 @@
   // сетевые запросы идут через Go (обходит CORS), в браузере — обычный fetch
   const fetchWaits = {}; let fetchSeq = 0;
   window.__a2f = (id, r) => { const f = fetchWaits[id]; delete fetchWaits[id]; if (f) f(r); };
-  function netGet(url) {
-    if (host.has("hostFetch")) return new Promise((res) => { const id = ++fetchSeq; fetchWaits[id] = res; window.hostFetch(url, id); setTimeout(() => { if (fetchWaits[id]) { delete fetchWaits[id]; res({ status: 0, error: "timeout" }); } }, 30000); });
-    return fetch(url).then(async (r) => ({ status: r.status, body: await r.text() })).catch((e) => ({ status: 0, error: String(e) }));
+  // opts: {method, headers, body} — для POST (обновление профиля на сайте)
+  function netGet(url, opts) {
+    if (host.has("hostFetch")) return new Promise((res) => { const id = ++fetchSeq; fetchWaits[id] = res; window.hostFetch(url, JSON.stringify(opts || {}), id); setTimeout(() => { if (fetchWaits[id]) { delete fetchWaits[id]; res({ status: 0, error: "timeout" }); } }, 30000); });
+    return fetch(url, opts || undefined).then(async (r) => ({ status: r.status, body: await r.text() })).catch((e) => ({ status: 0, error: String(e) }));
   }
   // вызов функции Go, которая отвечает асинхронно через __a2f(id, результат)
-  function hostAsync(fn, ...args) {
+  function hostAsyncT(ms, fn, ...args) {
     return new Promise((res) => {
       if (typeof window[fn] !== "function") { res({ status: 0, error: "нет в браузере" }); return; }
       const id = ++fetchSeq; fetchWaits[id] = res; window[fn](...args, id);
-      setTimeout(() => { if (fetchWaits[id]) { delete fetchWaits[id]; res({ status: 0, error: "timeout" }); } }, 8000);
+      setTimeout(() => { if (fetchWaits[id]) { delete fetchWaits[id]; res({ status: 0, error: "timeout" }); } }, ms);
     });
   }
-  window.A2Net = { get: netGet, call: hostAsync };
+  const hostAsync = (fn, ...args) => hostAsyncT(8000, fn, ...args);
+  window.A2Net = { get: netGet, call: hostAsync, callT: hostAsyncT };
   function safeLS(op, v) { try { if (op === "get") return localStorage.getItem("a2h") || ""; localStorage.setItem("a2h", v); } catch (e) { } return ""; }
 
   let st = L.newState();
@@ -939,6 +941,54 @@
   $("#chat-area").onclick = () => window.A2Chat && window.A2Chat.select();
   document.addEventListener("a2chat", chatBox);
   setTimeout(chatBox, 500);
+  // ---------- счётчик урона и пинг ----------
+  const fmtN = (v) => Math.round(v).toLocaleString("ru-RU");
+  const fmtBig = (v) => v >= 1e6 ? (v / 1e6).toFixed(v >= 1e7 ? 1 : 2).replace(".", ",") + " млн" : v >= 1e4 ? Math.round(v / 1e3) + " тыс." : fmtN(v);
+  const fmtSec = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+  function combatUI() {
+    const C = window.A2Combat; if (!C) return;
+    const s = S(), on = !!s.combatRead, L = C.live(), fights = C.fights();
+    // виджет
+    const w = $("#w-dps");
+    if (w) {
+      w.hidden = !on || !L;
+      if (L) w.innerHTML = `<b class="${L.live ? "live" : ""}">${fmtN(L.dps)}</b><span>DPS</span><span class="muted">${fmtSec(L.sec)} · ${fmtBig(L.dmg)}${L.live ? "" : " · последний бой"}</span>`;
+    }
+    // «Сегодня»
+    const t = $("#t-combat");
+    if (t) {
+      t.hidden = !on && !fights.length;
+      const rows = fights.slice(-6).reverse().map((f) => `<tr><td>${new Date(f.at).toTimeString().slice(0, 5)}</td><td><b>${fmtN(f.dps)}</b></td><td>${fmtSec(f.sec)}</td><td>${fmtBig(f.dmg)}</td><td>${fmtN(f.max)}</td><td class="muted">${esc((f.top || []).slice(0, 2).map((x) => x[0]).filter((x) => x !== "—").join(", "))}</td></tr>`).join("");
+      t.innerHTML = `<h3>Урон (DPS)</h3>` + (L && L.live ? `<p class="dps-live"><b>${fmtN(L.dps)}</b> DPS · ${fmtSec(L.sec)} · ${fmtBig(L.dmg)} урона · макс. удар ${fmtN(L.max)}</p>` : "") +
+        (rows ? `<table class="dps-tbl"><tr><th>Начало</th><th>DPS</th><th>Время</th><th>Урон</th><th>Макс. удар</th><th>Лучшие умения</th></tr>${rows}</table>` : `<p class="muted">${on ? "Бей монстра — бои появятся здесь." : "Счётчик выключен (Настройки → Счётчик урона)."}</p>`);
+    }
+    // настройки
+    const box = $("#combat-box"); if (!box) return;
+    $("#combat-on").checked = on;
+    const stTxt = !s.combatArea ? "Журнал боя не указан — нажми «Указать журнал боя» и обведи его мышью поверх игры." :
+      !on ? "Выключено." : C.state === "err" ? "Ошибка распознавания — см. уведомление." : C.state === "live" || C.state === "ready" ? "Работает." : "Включится, когда игра будет на переднем плане.";
+    box.innerHTML = `<p class="muted">${esc(stTxt)}${fights.length ? ` · боёв записано: <b>${fights.length}</b>` : ""}</p>` +
+      (C.last.length ? `<details><summary>Что распознано последним</summary><pre>${esc(C.last.join("\n"))}</pre></details>` : "");
+  }
+  $("#combat-on").onchange = (e) => { window.A2Combat && window.A2Combat.enable(e.target.checked); combatUI(); };
+  $("#combat-area").onclick = () => window.A2Combat && window.A2Combat.select();
+  $("#combat-reset").onclick = () => { if (confirm("Удалить записанные бои?")) window.A2Combat && window.A2Combat.reset(); };
+  document.addEventListener("a2combat", combatUI);
+  setTimeout(combatUI, 500);
+  function pingUI() {
+    const P = window.A2Ping, el = $("#w-ping"); if (!P || !el) return;
+    const r = P.last, on = S().pingOn !== false;
+    el.hidden = !on || !r || r.state === "nogame";
+    if (!r) return;
+    const ms = r.state === "ok" ? Math.round(r.ms) : null;
+    el.className = "w-ping nodrag " + (ms == null ? "bad" : ms < 60 ? "good" : ms < 120 ? "mid" : "bad");
+    el.textContent = ms != null ? ms + " мс" : r.state === "noconn" ? "нет связи" : "—";
+    el.title = ms != null ? `Пинг до сервера игры ${r.ip}:${r.port} (${r.method === "icmp" ? "ICMP" : "TCP"}), среднее ${Math.round(r.avg)} мс` : "Пинг до сервера игры: " + (r.state === "noconn" ? "не нашёл соединения игры с сервером" : "сервер не ответил");
+  }
+  document.addEventListener("a2ping", pingUI);
+  $("#ping-on").addEventListener("change", (e) => { S().pingOn = e.target.checked; save(); window.A2Ping && window.A2Ping.send(e.target.checked); pingUI(); });
+  setTimeout(() => { if (window.A2Ping && S().pingOn !== false) window.A2Ping.send(true); }, 700);
+
   // события из Go: трей, горячие клавиши
   function hostEvent(kind, v) {
     if (kind === "compact") setMode("compact");

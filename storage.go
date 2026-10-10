@@ -3,7 +3,7 @@
 //	data/
 //	  settings.json          — настройки, вид окна, порядок персонажей
 //	  timers.json            — таймеры боссов и свои напоминания
-//	  journal.json           — журнал убийств и добычи
+//	  journal.json           — журнал убийств, добычи, фарм-сессий и боёв (DPS)
 //	  assistant.json         — настройки ИИ-помощника и твои слова (без ключа API)
 //	  secrets.json           — ключ Claude API (не отдавай этот файл!)
 //	  cache.json             — скачанные шансы заточки
@@ -111,6 +111,7 @@ func (s *storage) save(raw string) bool {
 		"_что_это": "Журнал: убийства боссов, выпавшая добыча и фарм-сессии (статистика удачи и доход в час).",
 		"kills":    orEmptyList(st["kills"]), "loot": orEmptyList(st["loot"]),
 		"sessions": orEmptyList(st["sessions"]), "session": st["session"],
+		"combat":   st["combat"],
 	}))
 	ai, _ := st["ai"].(map[string]interface{})
 	aiPub := map[string]interface{}{}
@@ -197,6 +198,11 @@ func (s *storage) load() string {
 	}
 	if j := readJSON(filepath.Join(s.dir, "journal.json")); j != nil {
 		st["kills"], st["loot"] = j["kills"], j["loot"]
+		for _, k := range []string{"sessions", "session", "combat"} {
+			if v, ok := j[k]; ok && v != nil {
+				st[k] = v
+			}
+		}
 	}
 	ai := map[string]interface{}{}
 	if a := readJSON(filepath.Join(s.dir, "assistant.json")); a != nil {

@@ -13,8 +13,9 @@ import (
 )
 
 type netReq struct {
-	id  int
-	url string
+	id   int
+	url  string
+	opts string // {method, headers, body} в JSON; пусто — обычный GET
 }
 
 type netHelper struct {
@@ -36,7 +37,10 @@ func allowedURL(raw string) bool {
 func jsStr(s string) string { b, _ := json.Marshal(s); return string(b) }
 
 // вызывается на UI-потоке (из привязки hostFetch)
-func (n *netHelper) fetch(raw string, id int) {
+func (n *netHelper) fetch(raw, opts string, id int) {
+	if opts == "" {
+		opts = "{}"
+	}
 	if !allowedURL(raw) {
 		n.deliver(id, `{"status":0,"error":"адрес не разрешён"}`)
 		return
@@ -44,15 +48,15 @@ func (n *netHelper) fetch(raw string, id int) {
 	n.mu.Lock()
 	if n.failed {
 		n.mu.Unlock()
-		go func() { r := doHTTP(raw); n.main.Dispatch(func() { n.deliver(id, r) }) }()
+		go func() { r := doHTTP(raw, opts); n.main.Dispatch(func() { n.deliver(id, r) }) }()
 		return
 	}
 	if n.ready {
 		n.mu.Unlock()
-		n.run(netReq{id, raw})
+		n.run(netReq{id, raw, opts})
 		return
 	}
-	n.queue = append(n.queue, netReq{id, raw})
+	n.queue = append(n.queue, netReq{id, raw, opts})
 	start := !n.creating
 	n.creating = true
 	n.mu.Unlock()
@@ -67,7 +71,7 @@ func (n *netHelper) deliver(id int, res string) {
 }
 
 func (n *netHelper) run(r netReq) {
-	n.wv.Eval(`(async()=>{let r;try{const x=await fetch(` + jsStr(r.url) + `,{credentials:"include",cache:"no-store"});r={status:x.status,body:await x.text()}}catch(e){r={status:0,error:String(e)}}window.chrome.webview.postMessage(JSON.stringify({id:0,method:"__a2res",params:[` + strconv.Itoa(r.id) + `,r]}))})()`)
+	n.wv.Eval(`(async()=>{let r;try{const o=Object.assign({credentials:"include",cache:"no-store"},` + safeOpts(r.opts) + `);const x=await fetch(` + jsStr(r.url) + `,o);r={status:x.status,body:await x.text()}}catch(e){r={status:0,error:String(e)}}window.chrome.webview.postMessage(JSON.stringify({id:0,method:"__a2res",params:[` + strconv.Itoa(r.id) + `,r]}))})()`)
 }
 
 func (n *netHelper) create() {
@@ -85,7 +89,7 @@ func (n *netHelper) create() {
 		n.mu.Unlock()
 		for _, r := range q {
 			r := r
-			go func() { res := doHTTP(r.url); n.main.Dispatch(func() { n.deliver(r.id, res) }) }()
+			go func() { res := doHTTP(r.url, r.opts); n.main.Dispatch(func() { n.deliver(r.id, res) }) }()
 		}
 		return
 	}
@@ -136,8 +140,22 @@ func (n *netHelper) create() {
 			n.mu.Unlock()
 			for _, r := range q {
 				r := r
-				go func() { res := doHTTP(r.url); n.main.Dispatch(func() { n.deliver(r.id, res) }) }()
+				go func() { res := doHTTP(r.url, r.opts); n.main.Dispatch(func() { n.deliver(r.id, res) }) }()
 			}
 		})
 	}()
+}
+
+// параметры запроса из интерфейса: только метод, заголовки и тело (JSON-объект)
+func safeOpts(raw string) string {
+	var o struct {
+		Method  string            `json:"method,omitempty"`
+		Headers map[string]string `json:"headers,omitempty"`
+		Body    string            `json:"body,omitempty"`
+	}
+	if json.Unmarshal([]byte(raw), &o) != nil || (o.Method != "" && o.Method != "GET" && o.Method != "POST") {
+		return "{}"
+	}
+	b, _ := json.Marshal(o)
+	return string(b)
 }

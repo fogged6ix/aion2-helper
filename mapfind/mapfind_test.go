@@ -73,4 +73,3 @@ func TestSynthetic(t *testing.T) {
 		}
 	}
 }
-

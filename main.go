@@ -3,12 +3,14 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"io/fs"
 	"mime"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,7 +25,7 @@ import (
 var webFS embed.FS
 
 const appTitle = "AION 2 Helper"
-const appVersion = "4.5.0"
+const appVersion = "4.6.0"
 
 var (
 	user32                     = windows.NewLazySystemDLL("user32.dll")
@@ -413,11 +415,31 @@ func main() {
 	nh := &netHelper{main: w, dataPath: wvDir}
 	bindAI(w)
 	bindUpdate(w, a)
-	w.Bind("hostFetch", func(u string, id int) bool { nh.fetch(u, id); return true })
+	w.Bind("hostFetch", func(u, opts string, id int) bool { nh.fetch(u, opts, id); return true })
 
 	logDir = dataDir
 	ov := newOverlay(a)
 	w.Bind("hostOverlay", func(js string) bool { return ov.apply(js) })
+	// окно персонажа (P) в игре: через delay секунд снимаем окно игры и распознаём текст
+	w.Bind("hostSheetOCR", func(delay, id int) bool {
+		sheetOCR.ov = ov
+		go func() {
+			runtime.LockOSThread()
+			defer runtime.UnlockOSThread()
+			time.Sleep(time.Duration(delay) * time.Second)
+			r := ov.gameClientRect()
+			res := map[string]interface{}{}
+			if r.R-r.L < 200 {
+				res["error"] = "nogame"
+			} else {
+				lines, err := sheetOCR.once(r)
+				res["lines"], res["error"] = lines, err
+			}
+			b, _ := json.Marshal(res)
+			w.Dispatch(func() { w.Eval("window.__a2f&&__a2f(" + strconv.Itoa(id) + "," + string(b) + ")") })
+		}()
+		return true
+	})
 	w.Bind("hostSnap", func(sec int) bool {
 		ov.snapshot(exportDir(dataDir), sec)
 		return true

@@ -136,7 +136,8 @@ type overlay struct {
 	tipsOff      bool
 	gameRect     rect
 	selecting    bool
-	pick         int // выравнивание по двум точкам: выбранная статуя
+	selectFor    string // чья область выбирается: A2Chat (чат) или A2Combat (журнал боя)
+	pick         int    // выравнивание по двум точкам: выбранная статуя
 	pairs        [][4]float64
 	downX        int32
 	downY        int32
@@ -372,7 +373,7 @@ func keyDown(vk uintptr) bool {
 
 // раз в 400 мс (или 60 мс, когда следим за клавишей карты): какое окно игры, тот ли монитор, показывать ли
 func (o *overlay) tick() {
-	if !o.on && !chatOCR.isOn() {
+	if !o.on && !chatOCR.isOn() && !combatOCR.isOn() && !pinger.isOn() {
 		return
 	}
 	fg, _, _ := pGetForegroundWindow.Call()
@@ -977,7 +978,11 @@ func (o *overlay) finishSelect() {
 	w, h := float64(o.bw), float64(o.bh)
 	if x1-x0 > 40 && y1-y0 > 30 && w > 0 && h > 0 {
 		b, _ := json.Marshal([]float64{x0 / w, y0 / h, (x1 - x0) / w, (y1 - y0) / h})
-		o.a.w.Eval("window.A2Chat && A2Chat.area(" + string(b) + ")")
+		js := o.selectFor
+		if js == "" {
+			js = "A2Chat"
+		}
+		o.a.w.Eval("window." + js + " && " + js + ".area(" + string(b) + ")")
 	}
 	o.endAdjust(false)
 }
@@ -1025,12 +1030,16 @@ type ovIn struct {
 		W, H int
 		D    string
 	} `json:"icons"`
-	MapKey string    `json:"mapKey"`
-	Adjust *bool     `json:"adjust"`
-	Select bool      `json:"selectChat"`
-	Chat   []float64 `json:"chat"`
-	ChatOn *bool     `json:"chatOn"`
-	Reset  bool      `json:"reset"`
+	MapKey   string    `json:"mapKey"`
+	Adjust   *bool     `json:"adjust"`
+	Select   bool      `json:"selectChat"`
+	Chat     []float64 `json:"chat"`
+	ChatOn   *bool     `json:"chatOn"`
+	SelectCb bool      `json:"selectCombat"`
+	Combat   []float64 `json:"combat"`
+	CombatOn *bool     `json:"combatOn"`
+	Ping     *bool     `json:"ping"`
+	Reset    bool      `json:"reset"`
 }
 
 func parsePts(in [][]interface{}) []ovPt {
@@ -1158,7 +1167,20 @@ func (o *overlay) apply(js string) bool {
 	if in.ChatOn != nil {
 		chatOCR.enable(o, *in.ChatOn)
 	}
-	if in.Select {
+	if in.Combat != nil && len(in.Combat) == 4 {
+		combatOCR.setArea(in.Combat)
+	}
+	if in.CombatOn != nil {
+		combatOCR.enable(o, *in.CombatOn)
+	}
+	if in.Ping != nil {
+		pinger.enable(o, *in.Ping)
+	}
+	if in.Select || in.SelectCb {
+		o.selectFor = "A2Chat"
+		if in.SelectCb {
+			o.selectFor = "A2Combat"
+		}
 		o.startSelect()
 	}
 	if in.Adjust != nil {
@@ -1644,4 +1666,21 @@ func (o *overlay) isGame(h uintptr) bool {
 		return true
 	}
 	return false
+}
+
+// прямоугольник окна игры на экране (клиентская часть); если игра не найдена — пустой
+func (o *overlay) gameClientRect() rect {
+	hw, _, _ := pGetForegroundWindow.Call()
+	if hw == 0 || !o.isGame(hw) {
+		cls, _ := windows.UTF16PtrFromString("UnrealWindow")
+		hw, _, _ = pFindWindowW.Call(uintptr(unsafe.Pointer(cls)), 0)
+	}
+	if hw == 0 {
+		return rect{}
+	}
+	var cr rect
+	pGetClientRect.Call(hw, uintptr(unsafe.Pointer(&cr)))
+	p0 := point{0, 0}
+	pClientToScreen.Call(hw, uintptr(unsafe.Pointer(&p0)))
+	return rect{p0.X, p0.Y, p0.X + cr.R, p0.Y + cr.B}
 }

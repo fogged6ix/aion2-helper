@@ -498,6 +498,7 @@
       <div class="panel sheet">
         <h2>Показатели персонажа сейчас</h2>
         <p class="muted">Перепиши числа из окна персонажа (P) — это точка отсчёта. План = эти числа + разница между «Сейчас» и «План» по Дэваниону, снаряжению и прочим бонусам.</p>
+        <div class="row gap"><button class="btn primary" id="sheet-ocr">Считать с экрана игры</button><span class="muted small" id="sheet-ocr-st">Открой в игре окно персонажа (P) со всеми показателями, нажми кнопку и за 3 секунды переключись в игру.</span></div>
         ${GROUPS.map(([g, gl]) => `<h3 class="mt">${gl}</h3><div class="sheet-grid">${STATS.filter((s) => s[3] === g).map((s) => `<label><span>${esc(s[1])}${s[2] ? ", %" : ""}</span><input data-k="${s[0]}" type="number" step="0.1" value="${k.sheet[s[0]] ?? ""}"></label>`).join("")}</div>`).join("")}
         <h3 class="mt">Прочие бонусы (${k.editing === "plan" ? "план" : "сейчас"})</h3>
         <p class="muted small">Титулы, крылья, питомцы, Пантеон, Арканы, баффы — всё, что не попало в другие вкладки. Указывай то, что изменится.</p>
@@ -506,6 +507,7 @@
         <div class="sheet-grid"><label><span>Очки умений сверх уровня</span><input id="xp-skill" type="number" value="${k.extraPts.skill || 0}"></label><label><span>Очки стигм сверх уровня</span><input id="xp-stigma" type="number" value="${k.extraPts.stigma || 0}"></label></div>
       </div>`;
     $$(".sheet-grid input[data-k]", body).forEach((i) => i.onchange = () => { const v = i.value.trim(); if (v === "") delete k.sheet[i.dataset.k]; else k.sheet[i.dataset.k] = +v.replace(",", "."); ctx.save(); });
+    $("#sheet-ocr", body).onclick = () => sheetFromScreen(body);
     $("#xp-skill", body).onchange = (e) => { k.extraPts.skill = +e.target.value || 0; commit(false); };
     $("#xp-stigma", body).onchange = (e) => { k.extraPts.stigma = +e.target.value || 0; commit(false); };
     const ex = $("#extra-lines", body), sn = snap();
@@ -517,6 +519,56 @@
       $(".add", ex).onclick = () => { sn.extra.push(["", 0]); ctx.save(); draw(); };
     };
     draw();
+  }
+
+  // ---------- лист персонажа с экрана: распознаём окно персонажа (P) ----------
+  // подписи показателей: наши русские, английские (Armory) и частые варианты из игры
+  const SHEET_ALIAS = {
+    Attack: ["атака", "атк", "сила атаки", "attack"], DefenseMain: ["защита", "зщт", "defense"], Accuracy: ["меткость", "accuracy"],
+    Critical: ["крит. удар", "критический удар", "крит удар", "critical hit"], CombatSpeed: ["скр боя", "скорость боя", "скорость атаки", "combat speed", "attack speed"],
+    HPMax: ["оз", "макс. оз", "hp"], MPMax: ["ом", "макс. ом", "mp"], Evasion: ["укл", "уклонение", "evasion"], Block: ["блок", "block"],
+    CoolTimeDecrease: ["сокращение перезарядки", "сокращение времени перезарядки", "перезарядка", "cooldown reduction"],
+  };
+  let sheetLabels = null;
+  function labels() {
+    if (sheetLabels) return sheetLabels;
+    const L = [], add = (k, t) => { const n = String(t).toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim(); if (n.length >= 2) L.push([n, k]); };
+    STATS.forEach((s) => add(s[0], s[1].replace(/\s+—.*$/, "").replace(/\s*\(.*\)$/, "")));
+    Object.entries(SHEET_ALIAS).forEach(([k, a]) => a.forEach((t) => add(k, t)));
+    Object.entries((window.A2Import && window.A2Import.STAT) || {}).forEach(([t, k]) => add(k, t));
+    const S = (window.I18N_EN || {}).stats || {}; Object.entries(S).forEach(([k, t]) => SDEF[k] && add(k, t));
+    return (sheetLabels = L.sort((a, b) => b[0].length - a[0].length));
+  }
+  const NUMRE = /[-−]?\d{1,3}(?:[ \u00a0]\d{3})+(?:[.,]\d+)?|[-−]?\d+(?:[.,]\d+)?/;
+  const numOf = (t) => { const m = NUMRE.exec(t); return m ? +m[0].replace(/[ \u00a0]/g, "").replace("−", "-").replace(",", ".") : null; };
+  function sheetFromLines(lines) {
+    const out = {}, L = labels();
+    const norm = (t) => String(t).toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+    for (let i = 0; i < lines.length; i++) {
+      const t = norm(lines[i]);
+      // ищем подпись в начале строки (длинные варианты раньше коротких: «крит. удар в pvp» раньше «крит. удар»)
+      const hit = L.find(([lab]) => t.startsWith(lab) && !/[а-яa-z]/.test(t.charAt(lab.length)));
+      if (!hit || out[hit[1]] != null) continue;
+      let v = numOf(t.slice(hit[0].length));
+      if (v == null && i + 1 < lines.length && /^[\s\d.,%+−-]+$/.test(lines[i + 1])) v = numOf(lines[i + 1]);
+      if (v != null) out[hit[1]] = v;
+    }
+    return out;
+  }
+  async function sheetFromScreen(body) {
+    const stEl = $("#sheet-ocr-st", body);
+    if (typeof window.hostSheetOCR !== "function") { stEl.textContent = "Работает в программе для Windows."; return; }
+    stEl.textContent = "Через 3 секунды сниму окно игры — переключись в игру с открытым окном персонажа (P)…";
+    const r = await window.A2Net.callT(45000, "hostSheetOCR", 3);
+    if (!r || r.error) {
+      stEl.textContent = r && r.error === "nogame" ? "Не нашёл окно игры. Игра должна быть запущена в оконном режиме или «без рамки»." : "Не получилось: " + ((r && r.error) || "нет ответа") + ".";
+      return;
+    }
+    const got = sheetFromLines(r.lines || []), k = C(), n = Object.keys(got).length;
+    if (!n) { stEl.textContent = "Показатели не распознаны. Открой окно персонажа (P) крупно и попробуй ещё раз."; k.sheetOcr = (r.lines || []).slice(0, 80); ctx.save(); return; }
+    Object.assign(k.sheet, got); k.sheetOcr = (r.lines || []).slice(0, 80); ctx.save();
+    renderSheet(body);
+    const s2 = $("#sheet-ocr-st", body); if (s2) s2.textContent = `Считано показателей: ${n}. Проверь числа — распознавание иногда ошибается.`;
   }
 
   // ---------- Итог ----------
@@ -1093,7 +1145,7 @@
       const k = p.calc;
       if (st.settings.autoUpdate && ch.armory && window.A2Import && !mountAuto[ch.id] && (!k.imported || Date.now() - k.imported.at > 864e5)) { mountAuto[ch.id] = 1; window.A2Import.refresh(ctx, applyImport, true); }
     },
-    SLOTS, GRADES, rscText, slugFrom, fetchEnch, enchCost, aiSummary, analysis, skillInfo, enchQuote, enchBudget, planSetEnch, curSetEnch, ilvlSteps, whatIf, savePlan, enchSim, planAddDv, dvBoardInfo, names,
+    SLOTS, GRADES, rscText, sheetFromLines, slugFrom, fetchEnch, enchCost, aiSummary, analysis, skillInfo, enchQuote, enchBudget, planSetEnch, curSetEnch, ilvlSteps, whatIf, savePlan, enchSim, planAddDv, dvBoardInfo, names,
     _test: { enchCost, planEnchant, adviseDv, applyImport, valueOf, WEIGHTS, contrib, skillBonus, spentSkill, spentStigma, dvCost, prune, ensure, emptySnap, tipText, cls },
   };
 })();

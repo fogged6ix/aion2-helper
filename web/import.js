@@ -27,6 +27,8 @@
   };
   const GRADE = { Common: "C", Rare: "R", Legend: "L", Unique: "U", Epic: "E", Mythic: "E", Special: "S" };
   const ATTR = { STR: "Power", DEX: "Agility", INT: "Intellect", CON: "Vitality", AGI: "Precision", WIS: "Will", Time: "GodTime", Destruction: "GodDestruction", Death: "GodDeath", Illusion: "GodIllusion", Wisdom: "GodWisdom" };
+  // остальные божества (Справедливость, Свобода, Жизнь, Судьба, Пространство) — в «Прочие божества»
+  const ATTR_OTHER = { Justice: 1, Freedom: 1, Life: 1, Destiny: 1, Space: 1 };
 
   const num = (v) => { if (v == null) return 0; const s = String(v).replace(/\s| /g, "").replace(",", "."); const r = /(-?\d+(?:\.\d+)?)(?:[–-](\d+(?:\.\d+)?))?/.exec(s); if (!r) return 0; return r[2] ? (+r[1] + +r[2]) / 2 : +r[1]; };
   const statKey = (label) => STAT[String(label || "").toLowerCase().trim()] || "";
@@ -53,14 +55,19 @@
     const ks = R.indexOf("keyStats");
     if (ks > 0) { const dd = [...R.slice(ks, ks + 1500).matchAll(/"dd",null,\{"children":"([^"]+)"/g)].map((m) => m[1]); out.cp = dd[0]; out.ilvl = num(dd[1]); }
     const boards = grab(R, "boards") || [];
-    boards.forEach((b) => { out.dv[b.id] = (b.open || []).map(Number); });
+    // открытые ячейки Дэваниона: на странице есть не всегда — тогда догружаются по API для каждой доски
+    out.boards = boards.map((b) => ({ id: b.id, openNodes: b.openNodes || 0, has: Array.isArray(b.open) }));
+    boards.forEach((b) => { if (Array.isArray(b.open)) out.dv[b.id] = b.open.map(Number); });
     const reSk = /\["\$","li","(\d{8})",\{"children":\["\$","\$L[0-9a-z]+",null,\{"href":"[^"]*\/aion-2\/skills\/([a-z0-9-]+)"[\s\S]{0,1200}?skillLv","children":\["(\d+)[^"]*","([^"]*)"\]/g;
     let m; const seen = new Set();
     while ((m = reSk.exec(R))) { if (seen.has(m[1])) continue; seen.add(m[1]); out.skills.push([+m[1], +m[3], !!m[4].trim(), m[2]]); }
     const reSl = /"slotPos":(\d+),"label":"[^"]*","item":(null|\{"name":"([^"]*)","href":"\/aion-2\/items\/([a-z0-9-]+)")/g;
     while ((m = reSl.exec(R))) if (m[4]) out.slots.push([+m[1], m[4], m[3]]);
     const reAt = /"div","([A-Za-z_]+)",\{"children":\[\["\$","dt",null,\{"children":"[^"]+"\}\],\["\$","dd",null,\{"children":\[\["\$","span",null,\{"className":"[^"]*statValue","children":"(-?[\d.,]+)"/g;
-    while ((m = reAt.exec(R))) if (ATTR[m[1]]) out.attrs[ATTR[m[1]]] = num(m[2]);
+    while ((m = reAt.exec(R))) {
+      if (ATTR[m[1]]) out.attrs[ATTR[m[1]]] = num(m[2]);
+      else if (ATTR_OTHER[m[1]]) out.attrs.GodOther = (out.attrs.GodOther || 0) + num(m[2]);
+    }
     return out;
   }
 
@@ -139,12 +146,28 @@
     busy = true;
     const step = (t) => out.innerHTML = `<p class="muted"><span class="spin"></span> ${esc(t)}</p>`;
     try {
+      // просим сайт обновить профиль с официального сайта (раз в 10 минут; если рано — просто берём сохранённый)
+      const key = String(row.key || "").split(".");
+      if (row.serverId && key.length >= 3) {
+        step("Обновляю профиль на сайте…");
+        const rf = await window.A2Net.get(`${BASE}/api/aion-2/armory/refresh`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ region, server: row.serverId, id: key.slice(2).join(".") }) });
+        if (rf && rf.status === 200) await new Promise((res) => setTimeout(res, 800));
+      }
       step("Открываю профиль…");
       const url = `${BASE}/ru/aion-2/profile/${region}/${row.serverSlug}/${encodeURIComponent(row.name)}`;
       const r = await window.A2Net.get(url);
       if (!r || r.status !== 200) throw new Error("профиль не открылся (" + (r && (r.error || r.status)) + ")");
       const p = parseProfile(r.body);
       if (!p.charId) throw new Error("на странице нет данных персонажа");
+      const need = (p.boards || []).filter((b) => !b.has && b.openNodes > 0);
+      for (let i = 0; i < need.length; i++) {
+        step(`Дэванион: доска ${i + 1} из ${need.length}`);
+        const q = new URLSearchParams({ region, server: String(p.serverId), id: p.charId, board: String(need[i].id) });
+        const dr = await window.A2Net.get(`${BASE}/api/aion-2/armory/daevanion?${q}`);
+        try { const j = dr && dr.status === 200 ? JSON.parse(dr.body) : null; if (j && Array.isArray(j.openNodeIds)) p.dv[need[i].id] = j.openNodeIds.map(Number); } catch (e) { }
+        await new Promise((res) => setTimeout(res, 120));
+      }
+      const dvMissing = need.filter((b) => !p.dv[b.id]).length;
       const gear = {}, skipped = new Set();
       for (let i = 0; i < p.slots.length; i++) {
         const [pos, slug, nameRu] = p.slots[i], slot = SLOT_POS[pos];
@@ -174,6 +197,7 @@
       ctx.save();
       busy = false; close();
       const msg = [`Снаряжение: ${Object.keys(gear).length} предметов, умения и стигмы: ${p.skills.length}, Дэванион: ${Object.values(p.dv).reduce((a, x) => a + x.length, 0)} ячеек.`];
+      if (dvMissing) msg.push(`Дэванион: не загрузилось досок — ${dvMissing}, попробуй «Обновить из игры» позже.`);
       if (skipped.size) msg.push("Не распознаны показатели: " + [...skipped].slice(0, 5).join(", ") + ".");
       if (notes.length) msg.push("Учтено: " + notes.join("; ") + ".");
       if (!(o && o.quiet)) window.A2Toast && A2Toast("Персонаж загружен", msg.join(" "), "ok");
@@ -186,5 +210,5 @@
     }
   }
 
-  window.A2Import = { open, refresh, parseProfile, buildItem, statKey };
+  window.A2Import = { open, refresh, parseProfile, buildItem, statKey, STAT };
 })();

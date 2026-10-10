@@ -51,6 +51,9 @@ while (($p = [Console]::In.ReadLine()) -ne $null) {
 `
 
 type ocrWorker struct {
+	name    string        // имя файла снимка и объекта в интерфейсе
+	js      string        // объект интерфейса: A2Chat / A2Combat
+	every   time.Duration // пауза между снимками
 	mu      sync.Mutex
 	on      bool
 	running bool
@@ -63,7 +66,11 @@ type ocrWorker struct {
 	lang    string
 }
 
-var chatOCR = &ocrWorker{}
+var (
+	chatOCR   = &ocrWorker{name: "chat", js: "A2Chat", every: 1500 * time.Millisecond}
+	combatOCR = &ocrWorker{name: "combat", js: "A2Combat", every: 500 * time.Millisecond}
+	sheetOCR  = &ocrWorker{name: "sheet", js: "A2Sheet"}
+)
 
 func (c *ocrWorker) setArea(a []float64) {
 	c.mu.Lock()
@@ -101,7 +108,7 @@ func (c *ocrWorker) startPS() bool {
 	if c.cmd != nil {
 		return true
 	}
-	dir := filepath.Join(os.TempDir(), "AION2Helper-ocr")
+	dir := filepath.Join(os.TempDir(), "AION2Helper-ocr-"+c.name)
 	os.MkdirAll(dir, 0o755)
 	c.dir = dir
 	sp := filepath.Join(dir, "ocr.ps1")
@@ -128,7 +135,7 @@ func (c *ocrWorker) startPS() bool {
 			msg = "в Windows не установлен пакет распознавания текста для русского языка (Параметры → Время и язык → Язык → Русский → Дополнительно → Оптическое распознавание)"
 		}
 		b, _ := json.Marshal(msg)
-		c.say("window.A2Chat && A2Chat.status('err'," + string(b) + ")")
+		c.say("window." + c.js + " && " + c.js + ".status('err'," + string(b) + ")")
 		c.stopPS()
 		return false
 	}
@@ -136,7 +143,7 @@ func (c *ocrWorker) startPS() bool {
 	json.Unmarshal([]byte(line), &r)
 	c.lang = r.Ready
 	b, _ := json.Marshal(r.Ready)
-	c.say("window.A2Chat && A2Chat.status('ready'," + string(b) + ")")
+	c.say("window." + c.js + " && " + c.js + ".status('ready'," + string(b) + ")")
 	return true
 }
 
@@ -166,14 +173,20 @@ func (c *ocrWorker) readLine(timeout time.Duration) (string, error) {
 }
 
 // подготовка картинки для распознавания: яркость, тёмный текст на светлом, ×2
-func ocrImage(g mapfind.Gray) *image.Gray {
+func ocrImage(g mapfind.Gray) *image.Gray { return ocrImageMax(g, 2) }
+
+// k — во сколько раз увеличить; распознавание Windows принимает стороны не больше 2600 точек
+func ocrImageMax(g mapfind.Gray, k float64) *image.Gray {
 	// чат игры — светлые буквы на тёмном: инвертируем
 	var sum float64
 	for _, v := range g.P {
 		sum += float64(v)
 	}
 	invert := sum/float64(len(g.P)) < 128
-	w, h := g.W*2, g.H*2
+	if m := 2600 / float64(max(g.W, g.H)); k > m {
+		k = m
+	}
+	w, h := int(float64(g.W)*k), int(float64(g.H)*k)
 	big := mapfind.Resize(g, w, h)
 	im := image.NewGray(image.Rect(0, 0, w, h))
 	for i, v := range big.P {
@@ -228,8 +241,8 @@ func (c *ocrWorker) loop() {
 			for i := range th.P {
 				d += abs32(th.P[i] - prev[i])
 			}
-			if d/float64(len(th.P)) < 1.2 {
-				time.Sleep(1500 * time.Millisecond)
+			if d/float64(len(th.P)) < 0.6 {
+				time.Sleep(c.every)
 				continue
 			}
 		}
@@ -241,7 +254,7 @@ func (c *ocrWorker) loop() {
 			time.Sleep(10 * time.Second)
 			continue
 		}
-		p := filepath.Join(c.dir, "chat.png")
+		p := filepath.Join(c.dir, c.name+".png")
 		f, err := os.Create(p)
 		if err != nil {
 			time.Sleep(2 * time.Second)
@@ -260,10 +273,10 @@ func (c *ocrWorker) loop() {
 			}
 			if json.Unmarshal([]byte(line), &r) == nil && len(r.Lines) > 0 {
 				b, _ := json.Marshal(r.Lines)
-				c.say("window.A2Chat && A2Chat.lines(" + string(b) + ")")
+				c.say("window." + c.js + " && " + c.js + ".lines(" + string(b) + ")")
 			}
 		}
-		time.Sleep(1500 * time.Millisecond)
+		time.Sleep(c.every)
 	}
 }
 
@@ -272,4 +285,39 @@ func abs32(v float32) float64 {
 		return float64(-v)
 	}
 	return float64(v)
+}
+
+// разовое распознавание прямоугольника экрана (окно персонажа в игре): строки текста или ошибка
+func (c *ocrWorker) once(r rect) ([]string, string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	var cb capBuf
+	g, ok := cb.grab(r)
+	if !ok {
+		return nil, "не получилось сделать снимок экрана"
+	}
+	if !c.startPS() {
+		return nil, "не запустилось распознавание текста Windows"
+	}
+	p := filepath.Join(c.dir, c.name+".png")
+	f, err := os.Create(p)
+	if err != nil {
+		return nil, err.Error()
+	}
+	png.Encode(f, ocrImageMax(g, 1.6))
+	f.Close()
+	if _, err := io.WriteString(c.in, p+"\n"); err != nil {
+		c.stopPS()
+		return nil, err.Error()
+	}
+	line, err := c.readLine(30 * time.Second)
+	if err != nil {
+		return nil, "распознавание не ответило"
+	}
+	var res struct {
+		Lines []string `json:"lines"`
+		Err   string   `json:"err"`
+	}
+	json.Unmarshal([]byte(line), &res)
+	return res.Lines, res.Err
 }

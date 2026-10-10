@@ -51,6 +51,7 @@
     <img class="logo" src="logo.png" alt="">
     <button class="who nodrag" id="w-profile" title="Сменить персонажа"><span></span><svg class="ic sm"><use href="#i-swap"/></svg></button>
     <span class="w-pill" id="w-pill"></span>
+    <span class="w-ping nodrag" id="w-ping" hidden title="Пинг до сервера игры"></span>
     <div class="spacer"></div>
     <button class="ib nodrag" id="w-fold" title="Свернуть в полоску / развернуть"><svg class="ic sm"><use href="#i-fold"/></svg></button>
     <button class="ib nodrag" data-act="dock" title="Вернуть в угол"><svg class="ic sm"><use href="#i-pin"/></svg></button>
@@ -74,6 +75,7 @@
       <ul class="w-list" id="w-daylist"></ul>
     </div>
     <div class="w-foot" id="w-odyle"></div>
+    <div class="w-dps nodrag" id="w-dps" hidden></div>
     <form class="w-ask nodrag" id="w-ask" autocomplete="off">
       <svg class="ic sm"><use href="#i-ai"/></svg>
       <input id="w-q" placeholder="Спроси или скажи: «убил Кашапу»" maxlength="300">
@@ -128,6 +130,7 @@
               <ul class="ev-list" id="t-events"></ul>
             </div>
           </div>
+          <div class="panel t-combat" id="t-combat" hidden></div>
           <div class="t-cols">
             <div class="panel">
               <h3>Сегодняшние дела</h3>
@@ -266,6 +269,13 @@
           <label class="chk"><input type="checkbox" id="chat-on"><span>Читать чат игры</span></label>
           <div class="row"><button class="btn" type="button" id="chat-area">Указать окно чата</button></div>
           <div class="full chat-box" id="chat-box"></div>
+          <h3 class="full mt">Счётчик урона (DPS)</h3>
+          <p class="muted full">В чате игры сделай отдельную вкладку с журналом боя (сообщения об уроне) и обведи её мышью. Помощник распознаёт строки об уроне и считает урон, DPS и длительность каждого боя. Только снимок экрана: в игру ничего не отправляется, трафик игры не читается.</p>
+          <label class="chk"><input type="checkbox" id="combat-on"><span>Считать урон из журнала боя</span></label>
+          <div class="row gap"><button class="btn" type="button" id="combat-area">Указать журнал боя</button><button class="btn ghost" type="button" id="combat-reset">Очистить бои</button></div>
+          <div class="full chat-box" id="combat-box"></div>
+          <h3 class="full mt">Пинг</h3>
+          <label class="chk full"><input type="checkbox" name="pingOn" id="ping-on"><span>Показывать пинг до сервера игры (в виджете и на «Сегодня»)</span></label>
           <h3 class="full mt">Напоминания по расписанию</h3>
           <label>Обычно начинаю играть в<input name="playStart" placeholder="20:00"></label>
           <label class="chk"><input type="checkbox" name="remindReset"><span>За 30 мин до сброса дня напоминать о несделанных делах</span></label>
@@ -346,6 +356,7 @@
 <script src="brain.js"></script>
 <script src="ai.js"></script>
 <script src="chat.js"></script>
+<script src="combat.js"></script>
 <script src="update.js"></script>
 <script src="app.js"></script>
 <script defer src="data/mapdata.js"></script>

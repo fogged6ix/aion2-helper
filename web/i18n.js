@@ -27,8 +27,15 @@
     return to.replace(/\{t(\d+)\}/g, (_, i) => tr(m[+i] || "")).replace(/\{(\d+)\}/g, (_, i) => m[+i] || "");
   }
   // перевод строки: точное совпадение, затем шаблоны; иначе как есть
+  // пробелы по краям текста сохраняем: «<b>5</b> DPS · …» не должно слипаться
   function tr(s) {
     if (lang !== "en" || !s || !/[А-Яа-яЁё]/.test(s)) return s;
+    const out = tr0(s);
+    if (out === s) return s;
+    const a = /^\s*/.exec(s)[0], b = /\s*$/.exec(s)[0];
+    return (out.startsWith(a) ? "" : a) + out.trim() + (b && !out.endsWith(b) ? b : out.match(/\s*$/)[0]);
+  }
+  function tr0(s) {
     load();
     const k = norm(s);
     const hit = dict.get(k);

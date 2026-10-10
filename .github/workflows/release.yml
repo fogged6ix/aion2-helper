@@ -58,6 +58,11 @@ jobs:
           fi
           echo "tag: $TAG"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Выпуска $TAG нет — пропускаю"; exit 0
+            if [ "${{ github.event_name }}" = "push" ] && [ -s dist/notes.md ]; then
+              echo "Создаю выпуск $TAG"
+              gh release create "$TAG" --title "AION 2 Helper ${TAG#v}" --notes-file dist/notes.md --target "${{ github.sha }}"
+            else
+              echo "Выпуска $TAG нет — пропускаю"; exit 0
+            fi
           fi
           gh release upload "$TAG" AION2Helper.zip AION2Helper.exe --clobber

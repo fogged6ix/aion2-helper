@@ -429,7 +429,7 @@ type httpResult struct {
 	Error  string `json:"error,omitempty"`
 }
 
-func doHTTP(raw string) string {
+func doHTTP(raw, opts string) string {
 	res := httpResult{}
 	u, err := url.Parse(raw)
 	if err != nil || u.Scheme != "https" || (u.Host != "metabot.gg" && u.Host != "www.metabot.gg") {
@@ -437,7 +437,21 @@ func doHTTP(raw string) string {
 		b, _ := json.Marshal(res)
 		return string(b)
 	}
-	req, _ := http.NewRequest("GET", raw, nil)
+	var o struct {
+		Method  string            `json:"method"`
+		Headers map[string]string `json:"headers"`
+		Body    string            `json:"body"`
+	}
+	json.Unmarshal([]byte(safeOpts(opts)), &o)
+	method := "GET"
+	var body io.Reader
+	if o.Method == "POST" {
+		method, body = "POST", strings.NewReader(o.Body)
+	}
+	req, _ := http.NewRequest(method, raw, body)
+	for k, v := range o.Headers {
+		req.Header.Set(k, v)
+	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0")
 	req.Header.Set("Accept-Language", "ru-RU,ru;q=0.9,en;q=0.8")
 	req.Header.Set("Accept", "text/html,application/json;q=0.9,*/*;q=0.8")

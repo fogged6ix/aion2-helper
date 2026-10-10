@@ -909,3 +909,21 @@ body.float-open .toasts { right: auto; left: 236px; }
 .upd-prog { height: 6px; border-radius: 3px; background: var(--abyss); margin-top: 8px; overflow: hidden; }
 .upd-prog i { display: block; height: 100%; background: var(--aether); transition: width .2s; }
 #upd-status { align-self: center; margin-left: 8px; font-size: 12.5px; }
+
+/* пинг и счётчик урона */
+.w-ping { font: 600 11px/1 var(--mono, ui-monospace, monospace); padding: 3px 6px; border-radius: 6px; background: rgba(255, 255, 255, .06); white-space: nowrap; }
+.w-ping.good { color: #74d6a4; }
+.w-ping.mid { color: #ffd36b; }
+.w-ping.bad { color: var(--ember); }
+.w-dps { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: var(--mist); border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.w-dps[hidden] { display: none; }
+.w-dps b { font-size: 16px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.w-dps b.live { color: #ffd36b; }
+.w-dps .muted { margin-left: auto; }
+.t-combat h3 { margin: 0 0 8px; }
+.t-combat[hidden] { display: none; }
+.dps-live { font-size: 14px; margin: 0 0 8px; }
+.dps-live b { font-size: 20px; color: #ffd36b; font-variant-numeric: tabular-nums; }
+.dps-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.dps-tbl th { text-align: left; color: var(--mist); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--line-soft); }
+.dps-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); }

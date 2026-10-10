@@ -32,6 +32,9 @@
     updateCheck: true,             // проверять обновления раз в сутки
     chatRead: false,               // читать чат игры (распознавание текста Windows)
     chatArea: null,                // область чата: доли экрана [x, y, w, h]
+    combatRead: false,             // счётчик урона: распознавать журнал боя
+    combatArea: null,              // область журнала боя на экране
+    pingOn: true,                  // показывать пинг до сервера игры
     ovMapKey: "M",
     playStart: "",                 // когда обычно начинаешь играть
     remindReset: true,             // напоминать о несделанном перед сбросом
@@ -139,7 +142,7 @@
       if (Array.isArray(s.timers)) st.timers = s.timers;
       if (s.cache && typeof s.cache === "object") st.cache = s.cache;
       for (const k of ["kills", "loot", "sessions"]) if (Array.isArray(s[k])) st[k] = s[k];
-      for (const k of ["ai", "session"]) if (s[k] && typeof s[k] === "object") st[k] = s[k];
+      for (const k of ["ai", "session", "combat"]) if (s[k] && typeof s[k] === "object") st[k] = s[k];
       Object.assign(st.ui, s.ui || {});
     }
     return st;
