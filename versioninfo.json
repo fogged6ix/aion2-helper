@@ -1,0 +1,16 @@
+{
+  "FixedFileInfo": { "FileVersion": {"Major": 4, "Minor": 5, "Patch": 0, "Build": 0}, "ProductVersion": {"Major": 4, "Minor": 5, "Patch": 0, "Build": 0}, "FileFlagsMask": "3f", "FileFlags": "00", "FileOS": "040004", "FileType": "01", "FileSubType": "00" },
+  "StringFileInfo": {
+    "CompanyName": "fogged6ix",
+    "FileDescription": "AION 2 Helper",
+    "FileVersion": "4.5.0",
+    "InternalName": "AION2Helper",
+    "LegalCopyright": "fogged6ix · github.com/fogged6ix/aion2-helper",
+    "OriginalFilename": "AION2Helper.exe",
+    "ProductName": "AION 2 Helper",
+    "ProductVersion": "4.5.0"
+  },
+  "VarFileInfo": { "Translation": { "LangID": "0409", "CharsetID": "04B0" } },
+  "IconPath": "raw/app.ico",
+  "ManifestPath": "app.manifest"
+}

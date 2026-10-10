@@ -1,5 +1,5 @@
-# Собирает AION2Helper.exe и прикладывает его к выпуску GitHub.
-# Срабатывает при публикации выпуска, при пуше в main (если выпуск текущей версии без exe) и вручную.
+# Собирает AION2Helper.exe и папку AION2Helper.zip и прикладывает их к выпуску GitHub.
+# Срабатывает при публикации выпуска, при пуше в main (если выпуск текущей версии уже есть) и вручную.
 name: Build exe for release
 
 on:
@@ -20,10 +20,28 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
+      - name: Version info (icon, manifest, version)
+        run: |
+          VER=$(grep -oP 'appVersion = "\K[^"]+' main.go)
+          IFS=. read MA MI PA <<< "$VER"
+          jq --arg v "$VER" --argjson a "$MA" --argjson b "$MI" --argjson c "${PA:-0}" \
+            '.StringFileInfo.FileVersion=$v | .StringFileInfo.ProductVersion=$v
+             | .FixedFileInfo.FileVersion={Major:$a,Minor:$b,Patch:$c,Build:0}
+             | .FixedFileInfo.ProductVersion={Major:$a,Minor:$b,Patch:$c,Build:0}' versioninfo.json > vi.json
+          go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1
+          rm -f rsrc_windows_amd64.syso
+          ~/go/bin/goversioninfo -64 -o resource_windows_amd64.syso vi.json
       - name: Build
         run: |
-          GOFLAGS=-mod=mod GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o AION2Helper.exe .
+          GOFLAGS=-mod=mod GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui" -o AION2Helper.exe .
           ls -la AION2Helper.exe
+      - name: Portable folder
+        run: |
+          D="AION2 Helper"
+          mkdir -p "$D/data" "$D/exports"
+          cp AION2Helper.exe dist/README.txt "dist/Прочитай меня.txt" "$D/"
+          zip -r -X AION2Helper.zip "$D"
+          unzip -l AION2Helper.zip
       - name: Attach to release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -37,4 +55,4 @@ jobs:
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             echo "Выпуска $TAG нет — пропускаю"; exit 0
           fi
-          gh release upload "$TAG" AION2Helper.exe --clobber
+          gh release upload "$TAG" AION2Helper.zip AION2Helper.exe --clobber
