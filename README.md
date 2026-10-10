@@ -38,7 +38,7 @@ GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o A
 Dependencies are vendored in `third_party/` (go-webview2 with a small patch: the window is created hidden), so the build needs no network.
 The UI lives in `web/` and is embedded into the exe. `tools/` contains the scripts that generated the game data from scraped pages (the raw dumps are not included).
 
-To publish an update: bump `appVersion` in `main.go`, build, and create a GitHub release tagged `vX.Y.Z` with `AION2Helper.exe` attached.
+To publish an update: bump `appVersion` in `main.go`, push, and publish a GitHub release tagged `vX.Y.Z` — the workflow in `.github/workflows/release.yml` builds `AION2Helper.exe` and attaches it automatically.
 
 ## Credits
 

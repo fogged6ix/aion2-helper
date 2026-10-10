@@ -1,0 +1,40 @@
+# Собирает AION2Helper.exe и прикладывает его к выпуску GitHub.
+# Срабатывает при публикации выпуска, при пуше в main (если выпуск текущей версии без exe) и вручную.
+name: Build exe for release
+
+on:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Build
+        run: |
+          GOFLAGS=-mod=mod GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o AION2Helper.exe .
+          ls -la AION2Helper.exe
+      - name: Attach to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TAG="${{ github.event.release.tag_name }}"
+          else
+            TAG="v$(grep -oP 'appVersion = "\K[^"]+' main.go)"
+          fi
+          echo "tag: $TAG"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Выпуска $TAG нет — пропускаю"; exit 0
+          fi
+          gh release upload "$TAG" AION2Helper.exe --clobber
