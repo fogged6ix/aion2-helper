@@ -31,6 +31,11 @@ jobs:
           go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@v1.4.1
           rm -f rsrc_windows_amd64.syso
           ~/go/bin/goversioninfo -64 -o resource_windows_amd64.syso vi.json
+      - name: Check embedded files
+        run: |
+          for f in web/index.html web/data/calcdata.js web/data/mapdata.js web/data/extra.js web/data/content.js web/i18n_en.js; do
+            test -s "$f" || { echo "нет файла $f"; exit 1; }
+          done
       - name: Build
         run: |
           GOFLAGS=-mod=mod GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui" -o AION2Helper.exe .
