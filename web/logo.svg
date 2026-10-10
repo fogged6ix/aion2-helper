@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="65%">
+      <stop offset="0" stop-color="#33275a"/>
+      <stop offset="0.65" stop-color="#1a1430"/>
+      <stop offset="1" stop-color="#0e0b19"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6e2b0"/>
+      <stop offset="0.5" stop-color="#d9a956"/>
+      <stop offset="1" stop-color="#9c6b2a"/>
+    </linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c9b2ff"/>
+      <stop offset="0.55" stop-color="#8a64f0"/>
+      <stop offset="1" stop-color="#4a2fa8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fff3d6" stop-opacity="0.9"/>
+      <stop offset="0.35" stop-color="#b48cff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#7b55ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="116" fill="none" stroke="#5a4796" stroke-opacity=".55" stroke-width="4"/>
+  <circle cx="256" cy="262" r="176" fill="none" stroke="url(#gold)" stroke-width="9" stroke-opacity=".9"/>
+  <circle cx="256" cy="262" r="158" fill="none" stroke="#d9a956" stroke-width="2" stroke-opacity=".35"/>
+  <circle cx="256" cy="250" r="150" fill="url(#glow)"/>
+  <g id="w">
+    <path d="M238 300 C 196 300 148 282 104 236 C 140 246 176 248 206 238 C 166 230 130 206 100 168 C 140 186 178 192 210 184 C 182 170 158 144 142 112 C 182 140 222 170 244 214 Z" fill="url(#wing)"/>
+    <path d="M238 300 C 214 272 206 246 210 220" fill="none" stroke="#1a1430" stroke-width="4" stroke-opacity=".5"/>
+  </g>
+  <use href="#w" transform="translate(512 0) scale(-1 1)"/>
+  <path d="M256 70 L 276 230 L 256 262 L 236 230 Z" fill="url(#gold)"/>
+  <path d="M256 262 L 272 300 L 256 414 L 240 300 Z" fill="url(#gold)" opacity=".92"/>
+  <path d="M256 236 L 318 262 L 256 288 L 194 262 Z" fill="#fff3d6"/>
+  <circle cx="256" cy="262" r="12" fill="#ffffff"/>
+</svg>

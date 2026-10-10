@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AION 2 Helper</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="vendor/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="booting">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-today" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></symbol>
+    <symbol id="i-checks" viewBox="0 0 24 24"><path d="M4 6.5l2 2 3.5-4"/><path d="M12 7h8"/><path d="M4 13.5l2 2 3.5-4"/><path d="M12 14h8"/><path d="M12 20h8"/><path d="M5 20h2"/></symbol>
+    <symbol id="i-progress" viewBox="0 0 24 24"><path d="M4 19l5-6 4 3 7-9"/><path d="M15 7h5v5"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M3.5 6.5l5.5-2 6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/></symbol>
+    <symbol id="i-build" viewBox="0 0 24 24"><path d="M5 19L17.5 6.5"/><path d="M14 4.5l5.5 5.5"/><path d="M13 3.5l7.5 7.5-2 .5-6-6z"/><path d="M5 19l-1 1.5M7.5 16.5l-3-3"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+    <symbol id="i-shrink" viewBox="0 0 24 24"><path d="M20 10h-6V4M4 14h6v6M14 10l7-7M10 14l-7 7"/></symbol>
+    <symbol id="i-min" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 4h6l-1 6 3 3H7l3-3z"/><path d="M12 13v7"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M5 8h12l-3-3M19 16H7l3 3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7h7M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h3.5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+    <symbol id="i-grip" viewBox="0 0 24 24"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/></symbol>
+    <symbol id="i-skull" viewBox="0 0 24 24"><path d="M12 3.5c-4.6 0-7.5 3-7.5 7 0 2.4 1.1 4 2.6 5V19h9.8v-3.5c1.5-1 2.6-2.6 2.6-5 0-4-2.9-7-7.5-7z"/><circle cx="9.3" cy="11" r="1.4"/><circle cx="14.7" cy="11" r="1.4"/><path d="M10.5 19v-2M13.5 19v-2"/></symbol>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 17.5h6M10 21h4"/><path d="M12 3a6 6 0 00-3.6 10.8c.7.6 1.1 1.4 1.1 2.2v1.5h5V16c0-.8.4-1.6 1.1-2.2A6 6 0 0012 3z"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 18h7a3 3 0 000-6H9a3 3 0 010-6h7"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0113 0c0 5-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+    <symbol id="i-fold" viewBox="0 0 24 24"><path d="M6 9l6-5 6 5M6 15l6 5 6-5"/></symbol>
+    <symbol id="i-ai" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.9z"/><path d="M18.5 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="17.5" cy="6" r="2.5"/><circle cx="6.5" cy="12" r="2.5"/><circle cx="17.5" cy="18" r="2.5"/><path d="M8.7 10.8l6.6-3.6M8.7 13.2l6.6 3.6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M5 19.5h14"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/></symbol>
+    <symbol id="i-glow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" opacity=".6"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></symbol>
+  </defs>
+</svg>
+
+<!-- ====================== Виджет ====================== -->
+<section id="widget" class="mode" aria-label="Виджет">
+  <header class="bar drag" id="w-bar" title="Двойной клик — свернуть в полоску">
+    <img class="logo" src="logo.png" alt="">
+    <button class="who nodrag" id="w-profile" title="Сменить персонажа"><span></span><svg class="ic sm"><use href="#i-swap"/></svg></button>
+    <span class="w-pill" id="w-pill"></span>
+    <div class="spacer"></div>
+    <button class="ib nodrag" id="w-fold" title="Свернуть в полоску / развернуть"><svg class="ic sm"><use href="#i-fold"/></svg></button>
+    <button class="ib nodrag" data-act="dock" title="Вернуть в угол"><svg class="ic sm"><use href="#i-pin"/></svg></button>
+    <button class="ib nodrag" data-act="full" title="Полное окно"><svg class="ic sm"><use href="#i-expand"/></svg></button>
+    <button class="ib nodrag" data-act="min" title="Свернуть в панель задач"><svg class="ic sm"><use href="#i-min"/></svg></button>
+    <button class="ib nodrag close" data-act="close" title="Закрыть"><svg class="ic sm"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="w-body">
+    <div class="w-hero">
+      <div class="ring small" id="w-ring"></div>
+      <ul class="w-events" id="w-events"></ul>
+    </div>
+    <div class="w-day">
+      <button class="w-dayhead nodrag" id="w-dayhead">
+        <span class="t" id="w-daytitle">Сегодня</span><span class="n" id="w-daycount"></span>
+        <span class="meter"><i id="w-daybar"></i></span>
+        <svg class="ic sm chev"><use href="#i-chev"/></svg>
+      </button>
+      <div class="w-next nodrag" id="w-next"></div>
+      <div class="w-tabs nodrag" id="w-tabs"><button data-k="daily">День</button><button data-k="weekly">Неделя</button><button data-k="mine">Мои</button></div>
+      <ul class="w-list" id="w-daylist"></ul>
+    </div>
+    <div class="w-foot" id="w-odyle"></div>
+    <form class="w-ask nodrag" id="w-ask" autocomplete="off">
+      <svg class="ic sm"><use href="#i-ai"/></svg>
+      <input id="w-q" placeholder="Спроси или скажи: «убил Кашапу»" maxlength="300">
+      <button type="button" class="ib" id="w-mic" title="Сказать голосом"><svg class="ic sm"><use href="#i-mic"/></svg></button>
+    </form>
+    <div class="w-ans nodrag" id="w-ans" hidden></div>
+    <div class="w-opts nodrag" id="w-opts">
+      <label title="Значки поверх карты игры (Ctrl+Shift+M)"><input type="checkbox" id="w-ov-on"><span>Метки в игре</span></label>
+      <label title="Карточка с описанием при наведении на значок"><input type="checkbox" id="w-ov-tips"><span>Подсказки</span></label>
+      <button type="button" class="w-lay-btn" id="w-lay-btn" title="Какие значки показывать поверх игры">Что показывать <svg class="ic sm"><use href="#i-chev"/></svg></button>
+    </div>
+    <div class="w-layers nodrag" id="w-layers" hidden></div>
+  </div>
+</section>
+
+<!-- ====================== Полный режим ====================== -->
+<section id="full" class="mode" aria-label="Полный режим">
+  <nav class="rail">
+    <div class="brand drag"><img src="logo.png" alt=""><div><b>AION 2</b><small>Helper</small></div></div>
+    <button class="nav" data-view="today"><svg class="ic"><use href="#i-today"/></svg><span>Сегодня</span></button>
+    <button class="nav" data-view="checks"><svg class="ic"><use href="#i-checks"/></svg><span>Дела</span></button>
+    <button class="nav" data-view="progress"><svg class="ic"><use href="#i-progress"/></svg><span>Прогресс</span></button>
+    <button class="nav" data-view="map"><svg class="ic"><use href="#i-map"/></svg><span>Карта</span></button>
+    <button class="nav" data-view="bosses"><svg class="ic"><use href="#i-skull"/></svg><span>Боссы</span></button>
+    <button class="nav" data-view="calc"><svg class="ic"><use href="#i-calc"/></svg><span>Калькулятор</span></button>
+    <button class="nav" data-view="ai"><svg class="ic"><use href="#i-ai"/></svg><span>ИИ-помощник</span></button>
+    <button class="nav" data-view="build"><svg class="ic"><use href="#i-build"/></svg><span>Гайд</span></button>
+    <button class="nav" data-view="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Настройки</span></button>
+    <div class="spacer"></div>
+    <div class="profiles" id="profiles"></div>
+  </nav>
+  <main class="stage">
+    <header class="topbar drag">
+      <h1 id="view-title"></h1>
+      <div class="spacer"></div>
+      <span class="clock" id="clock"></span>
+      <button class="ib nodrag" id="ai-float-btn" title="Помощник поверх любого раздела (Ctrl+K)"><svg class="ic"><use href="#i-ai"/></svg></button>
+      <button class="ib nodrag" data-act="widget" title="Свернуть в виджет"><svg class="ic"><use href="#i-shrink"/></svg></button>
+      <button class="ib nodrag" data-act="min" title="Свернуть"><svg class="ic"><use href="#i-min"/></svg></button>
+      <button class="ib nodrag close" data-act="close" title="Закрыть"><svg class="ic"><use href="#i-close"/></svg></button>
+    </header>
+    <div class="views">
+      <!-- Сегодня -->
+      <section class="view" id="v-today">
+        <div class="today">
+          <div class="t-hero">
+            <div class="ring big" id="t-ring"></div>
+            <div class="t-hero-side">
+              <p class="kicker" id="t-rift-when"></p>
+              <h2>Следующий разлом</h2>
+              <p class="muted" id="t-rift-hint"></p>
+              <ul class="ev-list" id="t-events"></ul>
+            </div>
+          </div>
+          <div class="t-cols">
+            <div class="panel">
+              <h3>Сегодняшние дела</h3>
+              <div class="meter wide"><i id="t-daybar"></i></div>
+              <ul class="checklist" id="t-daily"></ul>
+            </div>
+            <div class="panel stack">
+              <div>
+                <h3>Энергия Одилы</h3>
+                <div class="odyle" id="t-odyle"></div>
+              </div>
+              <div>
+                <h3>Цель по GS</h3>
+                <div id="t-goal"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- ИИ -->
+      <section class="view" id="v-ai"><div id="ai-root"></div></section>
+      <!-- Боссы -->
+      <section class="view" id="v-bosses"><div id="bosses-root"></div></section>
+      <!-- Дела -->
+      <section class="view" id="v-checks">
+        <div class="seg" id="checks-tabs">
+          <button data-k="daily">Ежедневно</button>
+          <button data-k="weekly">Еженедельно</button>
+          <button data-k="mine">Мои дела</button>
+          <button data-k="roadmap">Роадмап на неделю</button>
+        </div>
+        <p class="muted" id="checks-meta"></p>
+        <div id="checks-body"></div>
+      </section>
+      <!-- Прогресс -->
+      <section class="view" id="v-progress">
+        <div class="prog">
+          <div class="panel">
+            <h3>Новая запись</h3>
+            <form id="prog-form" class="form">
+              <label>GS<input name="gs" inputmode="numeric" placeholder="1124"></label>
+              <label>Кристаллы Дэваниона<input name="crystals" inputmode="numeric"></label>
+              <label>Осколки стигм<input name="shards" inputmode="numeric"></label>
+              <label>Кинары, тыс.<input name="kinah" inputmode="numeric"></label>
+              <label class="full">Заметка<input name="note" placeholder="Например: наручи +10"></label>
+              <button class="btn primary full" type="submit"><svg class="ic sm"><use href="#i-plus"/></svg>Записать</button>
+            </form>
+            <h3 class="mt">Пороги</h3>
+            <ol class="ladder" id="ladder"></ol>
+          </div>
+          <div class="panel grow">
+            <div class="chart-head"><h3>Рост GS</h3><span class="muted" id="gs-now"></span></div>
+            <div class="chart" id="chart"></div>
+            <h3 class="mt">Записи</h3>
+            <div class="hist" id="hist"></div>
+          </div>
+        </div>
+      </section>
+      <!-- Карта -->
+      <section class="view" id="v-map">
+        <div id="map"></div>
+        <aside class="legend" id="legend">
+          <div class="search">
+            <svg class="ic sm"><use href="#i-search"/></svg>
+            <input id="map-q" placeholder="Босс, ресурс, моб, район или предмет — где падает…" autocomplete="off">
+            <kbd>Ctrl F</kbd>
+          </div>
+          <ul class="results" id="map-results"></ul>
+          <div class="legend-body" id="legend-body"></div>
+          <p class="credit">Карта и точки: allthings.how · Map art © NCSOFT</p>
+        </aside>
+        <div class="map-tools">
+          <button class="ib glass" id="map-you" title="Где я"><svg class="ic"><use href="#i-target"/></svg></button>
+          <button class="ib glass" data-tool="mark" title="Поставить метку (или правый клик по карте)"><svg class="ic"><use href="#i-note"/></svg></button>
+          <button class="ib glass" data-tool="route" title="Нарисовать маршрут"><svg class="ic"><use href="#i-route"/></svg></button>
+          <button class="ib glass" id="map-ov" title="Подсветить включённые слои поверх игры (Ctrl+Shift+M)"><svg class="ic"><use href="#i-glow"/></svg></button>
+        </div>
+        <div class="map-hint" id="map-hint" hidden></div>
+        <div class="map-filter" id="map-filter" hidden></div>
+        <div class="map-drop panel" id="map-drop" hidden></div>
+        <div class="coords" id="coords"></div>
+      </section>
+      <!-- Калькулятор -->
+      <section class="view" id="v-calc"><div id="calc-root" class="calc"></div></section>
+      <!-- Билд -->
+      <section class="view" id="v-build">
+        <div class="build">
+          <div class="seg vertical" id="build-tabs"></div>
+          <article class="panel prose" id="build-text"></article>
+        </div>
+      </section>
+      <!-- Настройки -->
+      <section class="view" id="v-settings">
+        <form class="panel form settings" id="set-form">
+          <h3 class="full" data-noi18n>Language · Язык</h3>
+          <label data-noi18n>Interface language · Язык интерфейса<select id="lang-sel" data-noi18n><option value="ru">Русский</option><option value="en">English</option></select></label>
+          <p class="muted full">Окно перезагрузится. Встроенный помощник (без нейросети) отвечает по-русски; Claude и Ollama отвечают на языке интерфейса.</p>
+          <h3 class="full mt">Расписание</h3>
+          <label>Часовой пояс сервера, UTC+<input name="serverOffset" type="number" step="0.5" min="-12" max="14"></label>
+          <label>Ежедневный сброс (время сервера)<input name="dailyReset" placeholder="06:00"></label>
+          <label>Недельный сброс — день<select name="weeklyDay"><option value="0">Понедельник</option><option value="1">Вторник</option><option value="2">Среда</option><option value="3">Четверг</option><option value="4">Пятница</option><option value="5">Суббота</option><option value="6">Воскресенье</option></select></label>
+          <label>Недельный сброс — время сервера<input name="weeklyTime" placeholder="16:00"></label>
+          <p class="muted full">По гайдам для глобальной версии сервер живёт по UTC+9: тогда разломы приходят в 18, 21, 00… по Москве. Если в игре иначе — поправь здесь.</p>
+          <h3 class="full mt">Окно</h3>
+          <label>Напоминать за, мин<input name="notifyMin" type="number" min="0" max="60"></label>
+          <label>Прозрачность виджета в покое<input name="idleOpacity" type="range" min="0.25" max="1" step="0.05"></label>
+          <label class="chk"><input type="checkbox" name="autoFade"><span>Становиться прозрачным, когда мышь уходит</span></label>
+          <label class="chk"><input type="checkbox" name="topmost"><span>Поверх всех окон</span></label>
+          <label class="chk"><input type="checkbox" name="sound"><span>Звук при напоминании</span></label>
+          <label>При запуске открывать<select name="startMode"><option value="compact">Виджет</option><option value="full">Полное окно</option></select></label>
+          <label class="chk"><input type="checkbox" name="winNotify"><span>Уведомления Windows (видны даже поверх игры в оконном режиме)</span></label>
+          <label class="chk"><input type="checkbox" name="bossNotify"><span>Напоминать о возрождении отмеченных боссов</span></label>
+          <label class="chk"><input type="checkbox" name="tray"><span>Значок в трее</span></label>
+          <h3 class="full mt">Поверх игры</h3>
+          <label>Показать / спрятать окно<input name="hotkeyToggle" class="hk" placeholder="Ctrl+Shift+A" readonly></label>
+          <label>Сквозные клики (мышь проходит в игру)<input name="hotkeyClick" class="hk" placeholder="Ctrl+Shift+X" readonly></label>
+          <p class="muted full">Кликни в поле и нажми сочетание; Backspace — убрать. Горячие клавиши работают, даже когда активна игра. Сквозные клики делают окно «стеклом»: его видно, но клики уходят в игру.</p>
+          <h3 class="full mt">Подсветка поверх карты игры</h3>
+          <p class="muted full">Точки с карты помощника (кубы, руда, боссы…) рисуются прозрачным слоем поверх игры. Открываешь карту в игре — помощник сам находит её на экране (по снимку экрана, как OBS) и ставит точки на места, двигает их вместе с картой. В игру ничего не посылается, клики проходят насквозь. Игра должна быть в оконном режиме или «окно без рамки». Если автоматически не находит — «Выровнять»: щёлкни по бирюзовой статуе и по ней же на карте игры, дважды.</p>
+          <label>Подсветка вкл/выкл<input name="hotkeyOverlay" class="hk" placeholder="Ctrl+Shift+M" readonly></label>
+          <label>Выровнять подсветку<input name="hotkeyAdjust" class="hk" placeholder="Ctrl+Shift+N" readonly></label>
+          <label class="full">Когда показывать точки<select name="ovMode">
+            <option value="auto">Сам: когда на экране карта игры (рекомендуется)</option>
+            <option value="key">По клавише карты в игре</option>
+            <option value="always">Всегда поверх игры</option></select></label>
+          <label>Точка под курсором — «взято»<input name="hotkeyTaken" class="hk" placeholder="Ctrl+Shift+C" readonly></label>
+          <label>Клавиша карты в игре<input name="ovMapKey" maxlength="3" placeholder="M"></label>
+          <div class="full row wrap">
+            <button class="btn" type="button" id="ov-toggle">Включить подсветку</button>
+            <button class="btn" type="button" id="ov-adjust">Выровнять</button>
+            <button class="btn ghost" type="button" id="ov-reset">Сбросить выравнивание</button>
+            <button class="btn ghost" type="button" id="ov-snap" title="Через 5 секунд сохранит картинку экрана — для настройки распознавания">Снимок экрана игры</button>
+          </div>
+          <h3 class="full mt">Чтение чата игры</h3>
+          <p class="muted full">Помощник раз в пару секунд смотрит на окно чата (снимок экрана) и распознаёт текст встроенным в Windows распознаванием — без интернета. Добыча, кинары и убийства боссов записываются сами: в журнал удачи и в текущую фарм-сессию. В игру ничего не отправляется.</p>
+          <label class="chk"><input type="checkbox" id="chat-on"><span>Читать чат игры</span></label>
+          <div class="row"><button class="btn" type="button" id="chat-area">Указать окно чата</button></div>
+          <div class="full chat-box" id="chat-box"></div>
+          <h3 class="full mt">Напоминания по расписанию</h3>
+          <label>Обычно начинаю играть в<input name="playStart" placeholder="20:00"></label>
+          <label class="chk"><input type="checkbox" name="remindReset"><span>За 30 мин до сброса дня напоминать о несделанных делах</span></label>
+          <label class="chk"><input type="checkbox" id="set-autostart"><span>Запускаться вместе с Windows (сразу в трей)</span></label>
+          <label class="chk"><input type="checkbox" name="autoUpdate"><span>Раз в сутки обновлять «Сейчас в игре» из Armory при открытии калькулятора</span></label>
+          <div class="full row">
+            <button class="btn primary" type="submit">Сохранить</button>
+            <button class="btn" type="button" id="test-notify">Проверить напоминание</button>
+          </div>
+          <p class="muted full" id="data-path"></p>
+        </form>
+        <div class="panel form settings" id="update-panel">
+          <h3 class="full">Обновления</h3>
+          <p class="muted full">Сейчас стоит версия <b id="upd-ver">—</b>. Помощник раз в сутки сам проверяет, нет ли новой версии на GitHub, и предлагает обновиться одной кнопкой: скачает, заменит себя и перезапустится. Твои данные (папка data) не трогаются.</p>
+          <label class="full">Репозиторий на GitHub<input id="upd-repo" placeholder="владелец/репозиторий" spellcheck="false"></label>
+          <label class="chk full"><input type="checkbox" id="upd-auto"><span>Проверять обновления автоматически</span></label>
+          <div class="full row"><button class="btn" type="button" id="upd-check">Проверить сейчас</button><span class="muted" id="upd-status"></span></div>
+        </div>
+        <div class="panel form settings" id="backup-panel">
+          <h3 class="full">Данные и резервные копии</h3>
+          <p class="muted full">Всё лежит в папке <b>data</b> рядом с программой: у каждого персонажа своя папка с <b>build.json</b> (билд), <b>character.json</b> (дела, прогресс) и <b>chat.json</b>; настройки, таймеры и журнал — отдельными файлами. Ключ API — только в <b>secrets.json</b>, его не отдавай. Каждый день программа сама кладёт полную копию в <b>data/backups</b> (14 последних). Файлы «Поделиться…» попадают в папку <b>exports</b>.</p>
+          <div class="full row wrap">
+            <button class="btn" type="button" id="bk-share">Поделиться настройками</button>
+            <label class="btn" for="bk-sfile">Загрузить настройки</label><input type="file" id="bk-sfile" accept=".json,application/json" hidden>
+            <button class="btn" type="button" id="bk-export">Полная копия в файл</button>
+            <label class="btn" for="bk-file">Загрузить из файла</label><input type="file" id="bk-file" accept=".json,application/json" hidden>
+            <button class="btn ghost" type="button" id="bk-open">Открыть папку с данными</button>
+          </div>
+          <label class="full">Восстановить из копии<div class="row"><select id="bk-list"></select><button class="btn" type="button" id="bk-restore">Восстановить</button></div></label>
+          <p class="muted full" id="ver-line"></p>
+        </div>
+      </section>
+    </div>
+  </main>
+</section>
+
+<div class="toasts" id="toasts"></div>
+<aside class="ai-float" id="ai-float" hidden>
+  <header class="aif-head"><svg class="ic sm"><use href="#i-ai"/></svg><b>Помощник</b><span class="spacer"></span>
+    <button class="ib" id="aif-full" title="Открыть полностью"><svg class="ic sm"><use href="#i-expand"/></svg></button>
+    <button class="ib" id="aif-close" title="Скрыть (Ctrl+K)"><svg class="ic sm"><use href="#i-close"/></svg></button></header>
+  <div class="ai-log aif-log" id="aif-log"></div>
+  <form class="aif-input" id="aif-form"><input id="aif-q" placeholder="Спроси или скомандуй… «где фармить кристаллы»" autocomplete="off"><button class="btn primary sm" type="submit">↵</button></form>
+</aside>
+<div class="ghost-badge" id="ghost-badge" hidden>Сквозные клики · <span id="ghost-key"></span></div>
+
+<div class="modal" id="modal" hidden>
+  <form class="modal-card" id="char-form">
+    <h2 id="char-title">Новый персонаж</h2>
+    <label>Имя<input name="name" required maxlength="24" placeholder="Имя персонажа в игре"></label>
+    <label>Класс
+      <div class="cls-pick" id="cls-pick"></div>
+    </label>
+    <div class="row gap">
+      <button class="btn primary" type="submit" id="char-ok">Создать</button>
+      <button class="btn ghost" type="button" id="char-cancel">Отмена</button>
+      <span class="spacer"></span>
+      <button class="btn danger" type="button" id="char-del" hidden>Удалить персонажа</button>
+    </div>
+  </form>
+</div>
+
+<script src="i18n.js"></script>
+<script>if (A2I18n.lang === "en") document.write('<script src="i18n_en.js"><\/script><script src="data/i18n_data_en.js"><\/script>');</script>
+<script src="classes.js"></script>
+<script src="data/guides.js"></script>
+<script src="data/content.js"></script>
+<script src="vendor/leaflet.js"></script>
+<script src="logic.js"></script>
+<script src="data/calcdata.js"></script>
+<script src="data/extra.js"></script>
+<script>A2I18n.patchData();</script>
+<script src="calc.js"></script>
+<script src="import.js"></script>
+<script src="bosses.js"></script>
+<script src="data/kb.js"></script>
+<script src="data/top.js"></script>
+<script src="brain.js"></script>
+<script src="ai.js"></script>
+<script src="chat.js"></script>
+<script src="update.js"></script>
+<script src="app.js"></script>
+<script defer src="data/mapdata.js"></script>
+<script defer src="map.js"></script>
+<script defer src="overlay.js"></script>
+</body>
+</html>
