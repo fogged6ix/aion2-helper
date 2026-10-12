@@ -238,11 +238,24 @@
           <h3>Активные</h3><div class="sk-grid">${all.filter((s) => s.kind === "active").map(cell).join("")}</div>
           <h3 class="mt">Пассивные</h3><div class="sk-grid">${all.filter((s) => s.kind === "passive").map(cell).join("")}</div>
           <p class="muted small">Число — уровень, купленный очками (до 10). Фиолетовое «+N» — бонус от Дэваниона и снаряжения.</p>
+          ${gearSkillsHtml(sn)}
         </div>
         <div class="sk-detail panel" id="sk-detail"></div>
       </div>`;
     $$(".sk", body).forEach((b) => b.onclick = () => { k.sel.skill = +b.dataset.id; ctx.save(); renderSkills(body); });
     renderSkillDetail($("#sk-detail", body), sel, sn, bonus);
+  }
+  // умения и божественные камни из снаряжения: какой предмет что даёт
+  function gearSkillsHtml(sn) {
+    const rows = [], theo = [];
+    SLOTS.forEach(([id, slotName]) => {
+      const g = sn.gear[id]; if (!g || !g.name) return;
+      (g.bind || []).forEach(([k, v]) => { if (String(k).startsWith("skill:")) { const sk = skillById(cc(), +k.slice(6)); if (sk) rows.push(`<li><img src="${ICON(sk.id)}" alt=""><span>${esc(sk.name)} <b>+${v}</b></span><small>${esc(slotName)} · ${esc(g.name)}</small></li>`); } });
+      (g.theo || []).forEach((t) => theo.push(`<li><span class="theo-ic" aria-hidden="true"></span><div><b>${esc(t.name)}</b><small>${esc(slotName)} · ${esc(g.name)}</small>${t.detail ? `<p>${esc(t.detail).replace(/\n/g, "<br>")}</p>` : ""}</div></li>`));
+    });
+    if (!rows.length && !theo.length) return "";
+    return (rows.length ? `<h3 class="mt">Умения от снаряжения</h3><ul class="gear-sk">${rows.join("")}</ul>` : "") +
+      (theo.length ? `<h3 class="mt">Божественные камни</h3><ul class="gear-theo">${theo.join("")}</ul>` : "");
   }
   function renderSkillDetail(box, s, sn, bonus) {
     const k = C(), lv = sn.skills[s.id] || 0, b = bonus[s.id] || 0, total = lv ? lv + b : 0;
@@ -464,6 +477,7 @@
       <label class="inline">Уровень предмета за +1 <input id="g-ilvlper" type="number" step="0.5" value="${g.ilvlPer ?? 2}"></label>
       <h3 class="mt">Привязка души</h3>${lines(g.bind, "bind", true, 4)}
       <h3 class="mt">Манакамни / инкрустация</h3>${lines(g.stones, "stones", false, Math.max(g.sockets || 0, 0))}
+      ${(g.theo || []).length ? `<h3 class="mt">Божественные камни</h3><ul class="gear-theo">${g.theo.map((t) => `<li><span class="theo-ic" aria-hidden="true"></span><div><b>${esc(t.name)}</b>${t.detail ? `<p>${esc(t.detail).replace(/\n/g, "<br>")}</p>` : ""}</div></li>`).join("")}</ul>` : ""}
       ${(g.sockets || 0) === 0 ? '<p class="muted small">Укажи число гнёзд выше, чтобы вставить камни.</p>' : ""}
       <div class="row gap mt"><button class="btn ghost" id="g-clear">Очистить слот</button>${k.editing === "plan" ? '<button class="btn ghost" id="g-revert">Вернуть как сейчас</button>' : ""}</div>`;
     const re = () => { commit(false); const doll = $(`.slot[data-s="${id}"]`); if (doll) { const card = ctx.root.querySelector(".doll"); renderGear(ctx.root.querySelector("#cx-body")); } };

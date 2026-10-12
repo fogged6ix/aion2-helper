@@ -25,7 +25,7 @@ import (
 var webFS embed.FS
 
 const appTitle = "AION 2 Helper"
-const appVersion = "4.6.0"
+const appVersion = "4.6.1"
 
 var (
 	user32                     = windows.NewLazySystemDLL("user32.dll")

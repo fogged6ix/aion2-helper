@@ -85,7 +85,13 @@
     });
     (it.subStats || []).forEach((s) => { const k = statKey(s.label); if (k) g.bind.push([k, num(s.value)]); else g.skipped.push(s.label); });
     (it.manastones || []).forEach((s) => { const k = statKey(s.label); if (k) g.stones.push([k, num(s.value)]); else g.skipped.push(s.label); });
-    (it.godstones || []).forEach((s) => { const k = statKey(s.label); if (k) g.bind.push([k, num(s.value)]); });
+    // божественные камни (Theostones): это эффекты-срабатывания, а не показатели — сохраняем название и описание
+    g.theo = []; g.theoSlots = it.godstoneSlots || 0;
+    (it.godstones || []).forEach((s) => {
+      const k = statKey(s.label);
+      if (k && s.value != null) { g.bind.push([k, num(s.value)]); return; }
+      g.theo.push({ name: String(s.label || "").replace(/^Theostone:\s*/i, "").trim(), detail: String(s.detail || "").trim() });
+    });
     return g;
   }
 

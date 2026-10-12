@@ -560,3 +560,4 @@ E2.update({
 "Дэванион: не загрузилось досок — #, попробуй «Обновить из игры» позже.": "Daevanion: # boards failed to load, try “Refresh from game” later.",
 "урона": "damage", "макс. удар": "max hit",
 })
+E2.update({"Умения от снаряжения": "Skills from gear", "Божественные камни": "Theostones"})

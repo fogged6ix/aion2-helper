@@ -927,3 +927,13 @@ body.float-open .toasts { right: auto; left: 236px; }
 .dps-tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
 .dps-tbl th { text-align: left; color: var(--mist); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--line-soft); }
 .dps-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); }
+
+/* умения и божественные камни из снаряжения */
+.gear-sk, .gear-theo { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.gear-sk li { display: grid; grid-template-columns: 28px 1fr; column-gap: 8px; align-items: center; font-size: 13px; }
+.gear-sk img { width: 28px; height: 28px; border-radius: 6px; grid-row: span 2; }
+.gear-sk b { color: var(--aether); }
+.gear-sk small, .gear-theo small { color: var(--mist); font-size: 11.5px; display: block; }
+.gear-theo li { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: 10px; background: rgba(255, 255, 255, .02); font-size: 13px; }
+.gear-theo p { margin: 4px 0 0; color: var(--mist); font-size: 12px; line-height: 1.45; }
+.theo-ic { flex: 0 0 auto; width: 12px; height: 12px; margin-top: 3px; transform: rotate(45deg); background: linear-gradient(135deg, #ffd36b, #ff8a4c); border-radius: 2px; }
