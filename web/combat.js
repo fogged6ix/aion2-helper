@@ -73,7 +73,10 @@
     C.fights.push({ at: f.start, sec: Math.round(dur(f)), dmg: f.dmg, dps: dps(f), hits: f.hits, crits: f.crits, max: f.max, taken: f.taken,
       top: Object.entries(f.skills).sort((a, b) => b[1] - a[1]).slice(0, 5) });
     while (C.fights.length > KEEP) C.fights.shift();
-    if (!C.best || dps(f) > C.best) C.best = dps(f);
+    if (!C.best || dps(f) > C.best) {
+      if (C.best && f.dmg > 0) app().toast("Новый рекорд DPS", Math.round(dps(f)).toLocaleString("ru-RU") + " — " + Math.round(f.sec || dur(f)) + " с", "ok");
+      C.best = dps(f);
+    }
     app().save();
     emit();
   }

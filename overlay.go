@@ -1039,6 +1039,7 @@ type ovIn struct {
 	Combat   []float64 `json:"combat"`
 	CombatOn *bool     `json:"combatOn"`
 	Ping     *bool     `json:"ping"`
+	PingPin  *string   `json:"pingPin"`
 	Reset    bool      `json:"reset"`
 }
 
@@ -1172,6 +1173,9 @@ func (o *overlay) apply(js string) bool {
 	}
 	if in.CombatOn != nil {
 		combatOCR.enable(o, *in.CombatOn)
+	}
+	if in.PingPin != nil {
+		pinger.setPin(*in.PingPin)
 	}
 	if in.Ping != nil {
 		pinger.enable(o, *in.Ping)

@@ -78,8 +78,8 @@
     }
     el.innerHTML = `<svg viewBox="0 0 ${size} ${size}">
       <defs>
-        <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".55" stop-color="#a487ff"/><stop offset="1" stop-color="#6b4fe0"/></linearGradient>
-        <linearGradient id="${id}h" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6a8"/><stop offset="1" stop-color="#ff7a3d"/></linearGradient>
+        <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3e2b8"/><stop offset=".55" stop-color="#c9a063"/><stop offset="1" stop-color="#8a6a3a"/></linearGradient>
+        <linearGradient id="${id}h" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd6a0"/><stop offset="1" stop-color="#e0a15a"/></linearGradient>
       </defs>
       <g class="ticks">${ticks}</g>
       <circle class="track" cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke-width="${size > 200 ? 7 : 6}"/>
@@ -243,13 +243,13 @@
     const k = wKey();
     fillList($("#w-daylist"), k, lists()[k]);
     $$("#w-tabs button").forEach((b) => b.classList.toggle("on", b.dataset.k === k));
-    $(".w-day").classList.toggle("open", st.ui.dayOpen !== false);
+    $(".w-day").classList.toggle("open", st.ui.dayOpen === true);
     refreshCounts();
   }
 
   // ---------- полный режим ----------
-  const TITLES = { today: "Сегодня", checks: "Дела", progress: "Прогресс", map: "Карта Альтгарда", bosses: "Боссы и таймеры", ai: "ИИ-помощник", calc: "Калькулятор", build: "Гайд", settings: "Настройки" };
-  const viewTitle = (v) => v === "build" ? "Гайд " + CLS_GEN[ch().cls] : v === "calc" ? "Калькулятор · " + ch().name : TITLES[v];
+  const TITLES = { today: "Сегодня", checks: "Дела", progress: "Прогресс и бои", map: "Карта Альтгарда", bosses: "Боссы и добыча", ai: "Помощник", calc: "Билд и калькулятор", build: "Гайд и макросы", pantheon: "Пантеон", settings: "Настройки" };
+  const viewTitle = (v) => v === "build" ? T("Гайд и макросы") + " · " + CL.name(ch().cls) : v === "calc" ? T("Билд и калькулятор") + " · " + ch().name : TITLES[v];
   function showView(v) {
     st.ui.view = v;
     $$(".nav").forEach((b) => b.classList.toggle("on", b.dataset.view === v));
@@ -260,6 +260,10 @@
     if (v === "progress") renderProgress();
     if (v === "bosses" && window.A2Bosses) window.A2Bosses.render();
     if (v === "ai" && window.A2AI) window.A2AI.render();
+    if (v === "pantheon" && window.A2Pantheon) window.A2Pantheon.render($("#pantheon-root"));
+    if (v === "build") renderBuild();
+    // «Дела» живут внутри «Сегодня»: подсвечиваем его в меню
+    if (v === "checks") $$('.nav[data-view="today"]').forEach((b) => b.classList.add("on"));
     save();
   }
   let tRing;
@@ -389,7 +393,7 @@
     const area = `${X(0)},${B} ${line} ${X(pts.length - 1)},${B}`;
     const labels = pts.map((p, i) => (pts.length <= 8 || i % Math.ceil(pts.length / 8) === 0) ? `<text x="${X(i)}" y="${Hh - 6}" text-anchor="middle">${esc(p.ts.slice(8, 10) + "." + p.ts.slice(5, 7))}</text>` : "").join("");
     box.innerHTML = `<svg viewBox="0 0 ${W} ${Hh}">
-      <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a487ff" stop-opacity=".35"/><stop offset="1" stop-color="#a487ff" stop-opacity="0"/></linearGradient></defs>
+      <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a063" stop-opacity=".35"/><stop offset="1" stop-color="#c9a063" stop-opacity="0"/></linearGradient></defs>
       <g class="grid">${grid}${labels}</g>${th}
       <line class="goal-line" x1="${Lm}" x2="${R}" y1="${Y(goal)}" y2="${Y(goal)}"/><text class="goal-text" x="${Lm + 6}" y="${Y(goal) - 6}">цель ${goal}</text>
       ${pts.length > 1 ? `<polygon class="area" points="${area}"/>` : ""}
@@ -416,15 +420,51 @@
   });
 
   // Билд
+  // Гайд и макросы: подробный гайд (metabot.gg) + данные топ-игроков + макросы
+  function guideSections() {
+    const lang = window.A2I18n && A2I18n.lang === "en" ? "en" : "ru", cls = ch().cls;
+    const G2 = (window.GUIDE2 && GUIDE2[cls] && GUIDE2[cls][lang]) || null, CM = (window.GUIDE2 && GUIDE2._common && GUIDE2._common[lang]) || null;
+    const old = prof().build || [], byT = (t) => (old.find((x) => x.title === t) || {}).text || "";
+    const pills = (arr, sep) => `<div class="pills">${arr.map((x, i) => `<span class="pill">${sep ? `<b>${i + 1}</b>` : ""}${esc(x)}</span>`).join(sep ? `<i class="sep">›</i>` : "")}</div>`;
+    const secs = [];
+    if (G2) {
+      secs.push({ id: "sum", title: "Кратко о классе", html: `<p class="lead">${esc(G2.intro)}</p>` +
+        (G2.core.length ? `<h4>${T("Основные умения")}</h4>${pills(G2.core)}` : "") +
+        (G2.stats.length ? `<h4>${T("Приоритет характеристик")}</h4>${pills(G2.stats, true)}` : "") + prose(byT(T("Билд"))) });
+      secs.push({ id: "play", title: "Как играть", html: `<ol class="steps">${G2.steps.map((x) => `<li><b>${esc(x.t)}</b><p>${esc(x.b)}</p></li>`).join("")}</ol>` +
+        (G2.tip ? `<div class="callout">${esc(G2.tip)}</div>` : "") + prose(byT(T("Как играть"))) });
+      const best = (st.combat && st.combat.best) || 0;
+      secs.push({ id: "macro", title: "Макросы", html: `<div class="macros">${G2.macros.map((m, mi) => `<section class="macro"><header><h4>${esc(m.name)}</h4><button class="btn sm" data-copy="${mi}">${T("Копировать")}</button></header><p class="muted small">${esc(m.when)}</p><ol>${m.skills.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></section>`).join("")}</div>` +
+        (best ? `<p class="muted small">${T("Твой лучший DPS по счётчику:")} <b>${best.toLocaleString("ru-RU")}</b>. ${T("Сравни бой до и после смены макроса.")}</p>` : "") +
+        (CM ? `<h4>${T("Как устроены макросы в AION 2")}</h4><ul>${CM.macroRules.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : ""), macros: G2.macros });
+      secs.push({ id: "stig", title: "Стигмы", html: `<h4>${T("Порядок открытия слотов (22 · 27 · 32 · 37 ур.)")}</h4>${pills(G2.stigmas, true)}` +
+        (G2.pvp ? `<p><b>${T("Замены для PvP:")}</b> ${esc(G2.pvp)}</p>` : "") + prose(byT(T("Стигмы"))) });
+      secs.push({ id: "dv", title: "Дэванион и камень", html: `<h4>${T("Дэванион")}</h4><p>${esc(G2.dv)}</p>` + prose(byT(T("Дэванион"))) +
+        (G2.theo ? `<h4>${T("Божественный камень (Theostone)")}</h4><p>${esc(G2.theo)}</p>` : "") +
+        (CM && CM.theo.length ? `<table class="tbl"><tr><th>${T("Классы")}</th><th>${T("Для PvE")}</th><th>${T("Почему")}</th></tr>${CM.theo.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</table>` : "") });
+      secs.push({ id: "stats", title: "Характеристики", html: prose(byT(T("Характеристики"))) });
+      secs.push({ id: "skills", title: "Умения у топ-игроков", html: prose(byT(T("Умения"))) });
+      secs.push({ id: "weap", title: "Оружие", html: prose(byT(T("Оружие"))) });
+      if (CM) secs.push({ id: "gear", title: "Снаряжение: что дальше", html: `<p class="lead">${esc(CM.gear.intro)}</p><ol class="steps">${CM.gear.steps.map((x) => `<li><b>${esc(x.t)}</b><p>${esc(x.b)}</p></li>`).join("")}</ol>` +
+        (CM.gear.avoid ? `<div class="callout"><b>${T("Не тратьте материалы на:")}</b> ${esc(CM.gear.avoid)}</div>` : "") });
+    } else old.forEach((x, i) => secs.push({ id: "o" + i, title: x.title, html: prose(x.text) }));
+    return { secs, src: CM ? CM.src : "" };
+  }
   function renderBuild() {
-    const secs = prof().build, tabs = $("#build-tabs");
+    const { secs, src } = guideSections(), tabs = $("#build-tabs");
     const cur = Math.min(st.ui.buildTab || 0, secs.length - 1);
-    tabs.innerHTML = secs.map((s, i) => `<button data-i="${i}" class="${i === cur ? "on" : ""}">${esc(s.title)}</button>`).join("");
+    tabs.innerHTML = `<span class="toc-h">Содержание</span>` + secs.map((s, i) => `<button data-i="${i}" class="${i === cur ? "on" : ""}"><b>${i + 1}</b>${esc(T(s.title))}</button>`).join("");
     $$("button", tabs).forEach((b) => b.onclick = () => { st.ui.buildTab = +b.dataset.i; save(); renderBuild(); });
     const art = $("#build-text");
     art.classList.remove("swap"); void art.offsetWidth; art.classList.add("swap");
-    const note = '<p class="muted">' + T("По данным metabot.gg (топ-игроки и редакция). Свои цифры проверяй в калькуляторе.") + '</p>';
-    art.innerHTML = `<h2>${esc(secs[cur].title)}</h2>` + note + prose(secs[cur].text);
+    const sec = secs[cur];
+    art.innerHTML = `<p class="kicker">${esc(CL.name(ch().cls))} · ${esc(T("гайд"))}</p><h2>${esc(T(sec.title))}</h2>` + sec.html +
+      `<p class="src muted small">${esc(T("Источник"))}: ${esc(src || "metabot.gg")}. ${esc(T("Свои цифры проверяй в калькуляторе."))}</p>`;
+    $$("[data-copy]", art).forEach((b) => b.onclick = () => {
+      const m = sec.macros[+b.dataset.copy], text = m.name + ": " + m.skills.map((x, i) => `${i + 1}. ${x}`).join("  ");
+      try { navigator.clipboard.writeText(text); } catch (e) { }
+      toast("Скопировано", m.name, "ok");
+    });
   }
   function prose(text) {
     let html = "", list = null;
@@ -617,7 +657,8 @@
     if (window.A2Bosses) window.A2Bosses.tick(now);
     if (mode === "compact") {
       updateRing(wRing, rift, now, nm);
-      $("#w-events").innerHTML = evs.filter((e) => e.id !== "rift").slice(0, 4).map((e) => eventRow(e, now, nm)).join("");
+      renderCaps(evs, rift, now, nm);
+      $("#w-events").innerHTML = evs.filter((e) => e.id !== "rift").slice(1, 4).map((e) => eventRow(e, now, nm)).join("");
       const wt = $("#w-time"); if (wt) wt.textContent = new Date(now).toTimeString().slice(0, 5);
       if (st.ui.wMini) {
         const nx = evs.find((e) => e.id !== "rift"), [d, t] = count("daily"), rl = rift.at - now;
@@ -650,6 +691,30 @@
       }
       if (st.ui.view === "today") { renderWidgetFoot(); }
     }
+  }
+  // ---------- капсулы виджета: разлом, урон (или Одила), ближайшее событие ----------
+  // «живые цифры»: изменившиеся знаки коротко прокручиваются
+  function liveNum(el, text) {
+    if (!el) return;
+    const old = el.dataset.v || "";
+    if (old === text) return;
+    el.dataset.v = text;
+    const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.innerHTML = [...text].map((c, i) => `<span class="${!reduce && old && old[i] !== c && /\d/.test(c) ? "roll" : ""}">${esc(c)}</span>`).join("");
+  }
+  const shortDelta = (ms) => { const x = L.fmtDelta(ms); return ms < 3600e3 ? x.slice(3) : x.slice(0, 5); };
+  function renderCaps(evs, rift, now, nm) {
+    const box = $("#w-caps"); if (!box) return;
+    if (!box.firstChild) box.innerHTML = [0, 1, 2].map((i) => `<div class="cap" data-i="${i}"><span class="cap-l"></span><b class="cap-v"></b><span class="cap-s"></span></div>`).join("");
+    const caps = $$(".cap", box), next = evs.find((e) => e.id !== "rift");
+    const set = (i, l, v, sub, cls) => { const c = caps[i]; c.className = "cap " + (cls || ""); $(".cap-l", c).textContent = T(l); liveNum($(".cap-v", c), v); $(".cap-s", c).textContent = sub || ""; };
+    const rl = rift.at - now;
+    set(0, "Разлом", shortDelta(rl), "в " + new Date(rift.at).toTimeString().slice(0, 5), rl <= 5 * 60e3 ? "hot glow" : rl <= Math.max(nm, 10) * 60e3 ? "hot" : "");
+    const C = window.A2Combat, Lv = C && S().combatRead ? C.live() : null;
+    if (Lv) set(1, "DPS", Math.round(Lv.dps).toLocaleString("ru-RU"), Lv.live ? fmtSec(Lv.sec) : T("последний бой"), Lv.live ? "live" : "");
+    else { const o = L.odyleNow(pst().odyle, now); set(1, "Одила", o == null ? "—" : String(o), "/ 560", o >= 560 ? "hot" : ""); }
+    if (next) set(2, next.name, shortDelta(next.at - now), "", next.at - now <= nm * 60e3 ? "hot" : "");
+    else set(2, "События", "—", "");
   }
   // умные напоминания: план к началу игры и несделанное перед сбросом дня (раз в день каждое)
   function pendingDaily() { try { return lists().daily.filter((x) => !pst().checks.daily[x.id]).map((x) => String(x.t || x.name || x.id).split(/ — | – |: |\(/)[0].trim().slice(0, 42)); } catch (e) { return []; } }
@@ -796,7 +861,7 @@
     host.top(!!S().topmost);
     applyHostSettings(false);
     host.info().then((p) => { if (p) { $("#data-path").textContent = "Данные хранятся: " + p; $("#data-path").onclick = () => host.call("hostOpenData"); $("#data-path").style.cursor = "pointer"; } });
-    await setMode(S().startMode === "full" ? "full" : "compact", true);
+    await setMode("full", true); // при запуске — всегда главное окно; виджет появляется сам, когда открыта игра
     save();
     document.body.classList.remove("booting");
     if (fresh) {
@@ -962,6 +1027,9 @@
       t.innerHTML = `<h3>Урон (DPS)</h3>` + (L && L.live ? `<p class="dps-live"><b>${fmtN(L.dps)}</b> DPS · ${fmtSec(L.sec)} · ${fmtBig(L.dmg)} урона · макс. удар ${fmtN(L.max)}</p>` : "") +
         (rows ? `<table class="dps-tbl"><tr><th>Начало</th><th>DPS</th><th>Время</th><th>Урон</th><th>Макс. удар</th><th>Лучшие умения</th></tr>${rows}</table>` : `<p class="muted">${on ? "Бей монстра — бои появятся здесь." : "Счётчик выключен (Настройки → Счётчик урона)."}</p>`);
     }
+    // «Прогресс и бои»: вся история
+    const pc = $("#p-combat");
+    if (pc) pc.innerHTML = fights.length ? `<h3 class="mt">${T("Бои (счётчик урона)")}</h3><table class="dps-tbl"><tr><th>Начало</th><th>DPS</th><th>Время</th><th>Урон</th><th>Макс. удар</th><th>Лучшие умения</th></tr>${fights.slice().reverse().map((f) => `<tr><td>${new Date(f.at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} ${new Date(f.at).toTimeString().slice(0, 5)}</td><td><b>${fmtN(f.dps)}</b></td><td>${fmtSec(f.sec)}</td><td>${fmtBig(f.dmg)}</td><td>${fmtN(f.max)}</td><td class="muted">${esc((f.top || []).slice(0, 2).map((x) => x[0]).filter((x) => x !== "—").join(", "))}</td></tr>`).join("")}</table>` : "";
     // настройки
     const box = $("#combat-box"); if (!box) return;
     $("#combat-on").checked = on;
@@ -985,7 +1053,22 @@
     el.textContent = ms != null ? ms + " мс" : r.state === "noconn" ? "нет связи" : "—";
     el.title = ms != null ? `Пинг до сервера игры ${r.ip}:${r.port} (${r.method === "icmp" ? "ICMP" : "TCP"}), среднее ${Math.round(r.avg)} мс` : "Пинг до сервера игры: " + (r.state === "noconn" ? "не нашёл соединения игры с сервером" : "сервер не ответил");
   }
+  // настройки: какие соединения игры видны и какое мерить
+  function pingBox() {
+    const box = $("#ping-box"), P = window.A2Ping; if (!box || !P) return;
+    const r = P.last, pin = S().pingPin || "";
+    if (!r || r.state === "nogame") { box.innerHTML = `<p class="muted">${T("Игра не запущена — список соединений появится, когда она откроется.")}</p>`; return; }
+    const list = r.conns || [];
+    box.innerHTML = `<p class="muted">${T("Соединения игры с серверами. Помощник сам выбирает игровое (не веб-порт); если цифра не совпадает с пингом в игре — закрепи другое.")}</p>` +
+      `<ul class="ping-list">${list.map((c) => `<li class="${r.ip + ":" + r.port === c.addr ? "on" : ""}"><code>${esc(c.addr)}</code><b>${c.ms != null ? Math.round(c.ms) + " мс" : "—"}</b><span class="muted small">${c.method === "tcp" ? "TCP" : c.method === "icmp" ? "ICMP" : ""}</span><button type="button" class="btn sm ${pin === c.addr ? "primary" : "ghost"}" data-pin="${esc(c.addr)}">${pin === c.addr ? T("Закреплено") : T("Мерить это")}</button></li>`).join("")}</ul>` +
+      (pin ? `<button type="button" class="link-btn" id="ping-auto">${T("Вернуть автовыбор")}</button>` : "");
+    $$("[data-pin]", box).forEach((b) => b.onclick = () => { S().pingPin = b.dataset.pin; save(); sendPin(); pingBox(); });
+    const au = $("#ping-auto", box); if (au) au.onclick = () => { S().pingPin = ""; save(); sendPin(); pingBox(); };
+  }
+  const sendPin = () => { if (typeof window.hostOverlay === "function") window.hostOverlay(JSON.stringify({ pingPin: S().pingPin || "" })); };
+  setTimeout(sendPin, 650);
   document.addEventListener("a2ping", pingUI);
+  document.addEventListener("a2ping", () => { if (st.ui.view === "settings" && mode === "full") pingBox(); });
   $("#ping-on").addEventListener("change", (e) => { S().pingOn = e.target.checked; save(); window.A2Ping && window.A2Ping.send(e.target.checked); pingUI(); });
   setTimeout(() => { if (window.A2Ping && S().pingOn !== false) window.A2Ping.send(true); }, 700);
 
@@ -997,6 +1080,9 @@
     else if (kind === "top") { S().topmost = !!v; save(); renderSettings(); }
     else if (kind === "quit") host.save(JSON.stringify(st));
   }
-  window.A2App = { get state() { return st; }, get pid() { return pid; }, get ch() { return ch(); }, setMode, showView, toast, hostEvent, notify, save, net: netGet, renderAll };
+  // игру запустили или развернули — переходим в виджет (вызывает Go)
+  function gameEvent(kind) { if (kind === "show" && mode !== "compact") setMode("compact"); }
+  { const b = $("#t-all-checks"); if (b) b.onclick = () => showView("checks"); }
+  window.A2App = { get state() { return st; }, get pid() { return pid; }, get ch() { return ch(); }, setMode, showView, toast, hostEvent, notify, save, net: netGet, renderAll, gameEvent };
   boot();
 })();

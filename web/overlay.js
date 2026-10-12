@@ -234,20 +234,20 @@
     if (id[0] === "m") {
       const m = ((((app().state.ui.map || {}).user || {}).marks) || []).find((x) => "m" + x.id === id);
       if (!m) return null;
-      return { title: m.t || "Моя метка", color: "#ffd36b", lines: [{ t: "Моя метка с карты помощника", c: "#a39bb8" }, { t: `X ${Math.round(m.x)} · Y ${Math.round(m.y)}`, c: "#7d7592" }] };
+      return { title: m.t || "Моя метка", color: "#ffd36b", lines: [{ t: "Моя метка с карты помощника", c: "#9aa79e" }, { t: `X ${Math.round(m.x)} · Y ${Math.round(m.y)}`, c: "#8f9c93" }] };
     }
     const p = D.points[+id.slice(1)]; if (!p) return null;
     const c = D.cats[p[2]], lid = c[4], lay = layerById[lid] || { name: "Монстры", color: "#ff3df2", note: "" };
     const area = D.areas.find((a) => a[0] === p[3]);
     const lines = [];
     const mob = mobOf(c[0]);
-    lines.push({ t: [lay.name, mob ? "ур. " + mob[2] + (mob[3] ? " · " + mob[3].toLowerCase() : "") : c[3] ? c[3].toLowerCase() : "", area ? (area[2] || area[1]) : ""].filter(Boolean).join(" · "), c: "#a39bb8" });
+    lines.push({ t: [lay.name, mob ? "ур. " + mob[2] + (mob[3] ? " · " + mob[3].toLowerCase() : "") : c[3] ? c[3].toLowerCase() : "", area ? (area[2] || area[1]) : ""].filter(Boolean).join(" · "), c: "#9aa79e" });
     // таймер возрождения босса
     if (mob && (lid === "bosses" || lid === "named") && window.A2Bosses) {
       const at = window.A2Bosses.respawnAt(mob[0]);
       if (at && at > now) lines.push({ t: `Возродится в ${new Date(at).toTimeString().slice(0, 5)} — через ${L2.fmtDelta(at - now).replace(/^00:/, "")}`, c: "#ffd36b", b: 1 });
       else if (at) lines.push({ t: "Уже должен быть на месте", c: "#74d6a4", b: 1 });
-      else lines.push({ t: "Таймер не запущен — скажи помощнику «убил " + mob[1].replace(/\(.*?\)/g, "").trim().split(" ").slice(-1)[0] + "»", c: "#7d7592" });
+      else lines.push({ t: "Таймер не запущен — скажи помощнику «убил " + mob[1].replace(/\(.*?\)/g, "").trim().split(" ").slice(-1)[0] + "»", c: "#8f9c93" });
     }
     // добыча
     if (mob && mob[6] && mob[6].length) {
@@ -260,7 +260,7 @@
     if (lay.note) lines.push({ t: lay.note, c: "#c9c3d6", wrap: 1 });
     if (lid === "cubes" || lid === "cubespots") lines.push({ t: lid === "cubespots" ? "Куб появляется в одной из возможных точек." : "Скрытый куб.", c: "#c9c3d6" });
     if (p[4] >= 0 && lid === "cubes" && D.labels[p[4]]) lines.push({ t: D.labels[p[4]], c: "#c9c3d6", wrap: 1 });
-    if (WEEKLY[lid]) lines.push({ t: `${S().hotkeyTaken || "Ctrl+Shift+C"} — отметить «взято»`, c: "#7d7592" });
+    if (WEEKLY[lid]) lines.push({ t: `${S().hotkeyTaken || "Ctrl+Shift+C"} — отметить «взято»`, c: "#8f9c93" });
     return { title: title(p), color: lay.color || "#ff3df2", lines };
   }
   function tip(id) {

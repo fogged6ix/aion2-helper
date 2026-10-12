@@ -25,7 +25,7 @@ import (
 var webFS embed.FS
 
 const appTitle = "AION 2 Helper"
-const appVersion = "4.6.1"
+const appVersion = "5.0.0"
 
 var (
 	user32                     = windows.NewLazySystemDLL("user32.dll")
@@ -341,7 +341,7 @@ func main() {
 	pDwmSetWindowAttribute.Call(a.hwnd, 34, uintptr(unsafe.Pointer(&border)), 4)
 	dark := uint32(1)
 	pDwmSetWindowAttribute.Call(a.hwnd, 20, uintptr(unsafe.Pointer(&dark)), 4)
-	a.applyMode("compact")
+	a.applyMode("full")
 
 	w.Bind("hostLoad", func() string { return store.load() })
 	w.Bind("hostSave", func(s string) bool { return store.save(s) })
@@ -446,6 +446,7 @@ func main() {
 	})
 	installSubclass(a)
 	addTray(a)
+	a.startGameFollow()
 	backupState(dataDir, store)
 	if hasArg("--tray") {
 		pShowWindow.Call(a.hwnd, swHide)

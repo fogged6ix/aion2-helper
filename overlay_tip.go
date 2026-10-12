@@ -175,7 +175,7 @@ func (o *overlay) showTip(t tipIn) {
 		font uintptr
 		h    int
 	}
-	accent := hexCol(t.Color, 0xffd36b)
+	accent := hexCol(t.Color, 0xc9a063)
 	rows := []row{{t.Title, accent, o.tipFontT, 24}}
 	const maxW = 380
 	for _, l := range t.Lines {
@@ -188,7 +188,7 @@ func (o *overlay) showTip(t tipIn) {
 			parts = o.wrapLine(l.T, f, maxW)
 		}
 		for _, s := range parts {
-			rows = append(rows, row{s, hexCol(l.C, 0xf2eefb), f, 20})
+			rows = append(rows, row{s, hexCol(l.C, 0xece6d6), f, 20})
 		}
 	}
 	w, h := 0, 12
@@ -225,7 +225,7 @@ func (o *overlay) showTip(t tipIn) {
 		d := math.Hypot(fx-cx, fy-cy)
 		return math.Max(0, math.Min(1, rad+.5-d))
 	}
-	bg := uint32(0x17121f)
+	bg := uint32(0x0e1613)
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
 			c := bg
@@ -237,11 +237,11 @@ func (o *overlay) showTip(t tipIn) {
 	}
 	// рамка
 	for x := 0; x < w; x++ {
-		px[x] = 0xff000000 | 0x3a3058
-		px[(h-1)*w+x] = 0xff000000 | 0x3a3058
+		px[x] = 0xff000000 | 0x8a6a3a
+		px[(h-1)*w+x] = 0xff000000 | 0x8a6a3a
 	}
 	for y := 0; y < h; y++ {
-		px[y*w+w-1] = 0xff000000 | 0x3a3058
+		px[y*w+w-1] = 0xff000000 | 0x8a6a3a
 	}
 	pGdiFlush.Call()
 	pSetBkMode.Call(o.tip.mdc, 1)

@@ -561,3 +561,26 @@ E2.update({
 "урона": "damage", "макс. удар": "max hit",
 })
 E2.update({"Умения от снаряжения": "Skills from gear", "Божественные камни": "Theostones"})
+E2.update({
+"# мест под картины, # под статуи и # под колосса. Открывается после задания Возвышения «Тот, кто слышит голос» (# ур.). Украшение сначала нужно зарегистрировать из сумки.": "# slots for artworks, # for statues and # for a colossus. Unlocks after the Ascension quest “The One Who Hears the Voice” (lv. #). A decoration must first be registered from your bag.",
+"Боссы и добыча": "Bosses & loot", "Билд и калькулятор": "Build & calculator", "Гайд и макросы": "Guide & macros", "Прогресс и бои": "Progress & fights",
+"Дэванион и камень": "Daevanion & Theostone", "Снаряжение: что дальше": "Gear: what's next", "Умения у топ-игроков": "Skills of top players",
+"Кратко о классе": "Class overview", "Макросы": "Macros", "Мир": "World", "Персонаж": "Character", "Помощь": "Help", "Пантеон": "Pantheon",
+"В пантеоне": "In Pantheon", "Все дела →": "All tasks →", "Где выбить": "Where to get", "Есть": "Have", "Есть:": "Have:", "Нет у меня": "Missing",
+"Поиск украшения": "Search decorations", "Содержание": "Contents", "Содержание гайда": "Guide contents",
+"Список украшений — из базы предметов metabot.gg (глобальный клиент); шансы — из таблиц добычи Альтгарда. Бонусы конкретного украшения смотри в подсказке в игре: сайты их пока не публикуют.": "Decorations list from the metabot.gg item database (global client); chances from Altgard drop tables. See a decoration's bonuses in its in-game tooltip: sites don't publish them yet.",
+"Украшения дают божественные показатели": "Decorations give divine stats",
+"Числа — из импорта персонажа (Armory). Остальные божества сайт отдаёт одной суммой:": "Numbers come from the character import (Armory). The site gives the other deities as one sum:",
+"Картина": "Artwork", "Статуя": "Statue", "Колосс": "Colossus", "Божественные показатели": "Divine stats",
+"гайд": "guide", "Источник": "Source", "Свои цифры проверяй в калькуляторе.": "Check your own numbers in the calculator.",
+"Как играть": "How to play", "Стигмы": "Stigmas", "Характеристики": "Stats", "Оружие": "Weapon", "Скопировано": "Copied", "Копировать": "Copy",
+"Основные умения": "Core skills", "Приоритет характеристик": "Stat priority", "Как устроены макросы в AION #": "How macros work in AION #",
+"Новый рекорд DPS": "New DPS record", "Бои (счётчик урона)": "Fights (damage meter)",
+"Игра не запущена — список соединений появится, когда она откроется.": "The game isn't running — the connection list will appear when it opens.",
+"Соединения игры с серверами. Помощник сам выбирает игровое (не веб-порт); если цифра не совпадает с пингом в игре — закрепи другое.": "The game's server connections. The helper picks the game one (not a web port); if the number doesn't match the in-game ping, pin another.",
+"Закреплено": "Pinned", "Мерить это": "Measure this", "Вернуть автовыбор": "Back to auto",
+"Справедливость": "Justice", "Свобода": "Freedom", "Видение": "Vision", "Жизнь": "Life", "Время": "Time", "Разрушение": "Destruction", "Смерть": "Death", "Мудрость": "Wisdom", "Судьба": "Destiny", "Пространство": "Space",
+})
+E2.update({"Порядок открытия слотов (# · # · # · # ур.)": "Slot unlock order (lv. # · # · # · #)", "Божественный камень (Theostone)": "Theostone",
+"Классы": "Classes", "Для PvE": "For PvE", "Почему": "Why", "Замены для PvP:": "PvP swaps:", "Не тратьте материалы на:": "Don't spend materials on:",
+"Твой лучший DPS по счётчику:": "Your best DPS on the meter:", "Сравни бой до и после смены макроса.": "Compare a fight before and after changing the macro."})

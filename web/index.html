@@ -41,6 +41,7 @@
     <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5"/><path d="M5 19.5h14"/></symbol>
     <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0013 0M12 17.5V21M8.5 21h7"/></symbol>
+    <symbol id="i-temple" viewBox="0 0 24 24"><path d="M3.5 9L12 4l8.5 5"/><path d="M5 9.5h14M6.5 9.5v8M10 9.5v8M14 9.5v8M17.5 9.5v8M4 20h16M5 17.5h14"/></symbol>
     <symbol id="i-glow" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" opacity=".6"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></symbol>
   </defs>
 </svg>
@@ -60,6 +61,7 @@
     <button class="ib nodrag close" data-act="close" title="Закрыть"><svg class="ic sm"><use href="#i-close"/></svg></button>
   </header>
   <div class="w-body">
+    <div class="w-caps" id="w-caps"></div>
     <div class="w-hero">
       <div class="ring small" id="w-ring"></div>
       <ul class="w-events" id="w-events"></ul>
@@ -96,15 +98,18 @@
   <nav class="rail">
     <div class="brand drag"><img src="logo.png" alt=""><div><b>AION 2</b><small>Helper</small></div></div>
     <button class="nav" data-view="today"><svg class="ic"><use href="#i-today"/></svg><span>Сегодня</span></button>
-    <button class="nav" data-view="checks"><svg class="ic"><use href="#i-checks"/></svg><span>Дела</span></button>
-    <button class="nav" data-view="progress"><svg class="ic"><use href="#i-progress"/></svg><span>Прогресс</span></button>
-    <button class="nav" data-view="map"><svg class="ic"><use href="#i-map"/></svg><span>Карта</span></button>
-    <button class="nav" data-view="bosses"><svg class="ic"><use href="#i-skull"/></svg><span>Боссы</span></button>
-    <button class="nav" data-view="calc"><svg class="ic"><use href="#i-calc"/></svg><span>Калькулятор</span></button>
-    <button class="nav" data-view="ai"><svg class="ic"><use href="#i-ai"/></svg><span>ИИ-помощник</span></button>
-    <button class="nav" data-view="build"><svg class="ic"><use href="#i-build"/></svg><span>Гайд</span></button>
-    <button class="nav" data-view="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Настройки</span></button>
+    <div class="nav-group">Мир</div>
+    <button class="nav sub" data-view="map"><svg class="ic"><use href="#i-map"/></svg><span>Карта</span></button>
+    <button class="nav sub" data-view="bosses"><svg class="ic"><use href="#i-skull"/></svg><span>Боссы и добыча</span></button>
+    <div class="nav-group">Персонаж</div>
+    <button class="nav sub" data-view="calc"><svg class="ic"><use href="#i-calc"/></svg><span>Билд и калькулятор</span></button>
+    <button class="nav sub" data-view="build"><svg class="ic"><use href="#i-build"/></svg><span>Гайд и макросы</span></button>
+    <button class="nav sub" data-view="pantheon"><svg class="ic"><use href="#i-temple"/></svg><span>Пантеон</span></button>
+    <button class="nav sub" data-view="progress"><svg class="ic"><use href="#i-progress"/></svg><span>Прогресс и бои</span></button>
+    <div class="nav-group">Помощь</div>
+    <button class="nav sub" data-view="ai"><svg class="ic"><use href="#i-ai"/></svg><span>Помощник</span></button>
     <div class="spacer"></div>
+    <button class="nav" data-view="settings"><svg class="ic"><use href="#i-settings"/></svg><span>Настройки</span></button>
     <div class="profiles" id="profiles"></div>
   </nav>
   <main class="stage">
@@ -133,7 +138,7 @@
           <div class="panel t-combat" id="t-combat" hidden></div>
           <div class="t-cols">
             <div class="panel">
-              <h3>Сегодняшние дела</h3>
+              <div class="panel-head"><h3>Сегодняшние дела</h3><button class="link-btn" type="button" id="t-all-checks">Все дела →</button></div>
               <div class="meter wide"><i id="t-daybar"></i></div>
               <ul class="checklist" id="t-daily"></ul>
             </div>
@@ -186,6 +191,7 @@
             <div class="chart" id="chart"></div>
             <h3 class="mt">Записи</h3>
             <div class="hist" id="hist"></div>
+            <div class="p-combat" id="p-combat"></div>
           </div>
         </div>
       </section>
@@ -213,12 +219,14 @@
         <div class="map-drop panel" id="map-drop" hidden></div>
         <div class="coords" id="coords"></div>
       </section>
+      <!-- Пантеон -->
+      <section class="view" id="v-pantheon"><div id="pantheon-root"></div></section>
       <!-- Калькулятор -->
       <section class="view" id="v-calc"><div id="calc-root" class="calc"></div></section>
       <!-- Билд -->
       <section class="view" id="v-build">
-        <div class="build">
-          <div class="seg vertical" id="build-tabs"></div>
+        <div class="guide">
+          <nav class="guide-toc panel" id="build-tabs" aria-label="Содержание гайда"></nav>
           <article class="panel prose" id="build-text"></article>
         </div>
       </section>
@@ -240,7 +248,6 @@
           <label class="chk"><input type="checkbox" name="autoFade"><span>Становиться прозрачным, когда мышь уходит</span></label>
           <label class="chk"><input type="checkbox" name="topmost"><span>Поверх всех окон</span></label>
           <label class="chk"><input type="checkbox" name="sound"><span>Звук при напоминании</span></label>
-          <label>При запуске открывать<select name="startMode"><option value="compact">Виджет</option><option value="full">Полное окно</option></select></label>
           <label class="chk"><input type="checkbox" name="winNotify"><span>Уведомления Windows (видны даже поверх игры в оконном режиме)</span></label>
           <label class="chk"><input type="checkbox" name="bossNotify"><span>Напоминать о возрождении отмеченных боссов</span></label>
           <label class="chk"><input type="checkbox" name="tray"><span>Значок в трее</span></label>
@@ -276,6 +283,7 @@
           <div class="full chat-box" id="combat-box"></div>
           <h3 class="full mt">Пинг</h3>
           <label class="chk full"><input type="checkbox" name="pingOn" id="ping-on"><span>Показывать пинг до сервера игры (в виджете и на «Сегодня»)</span></label>
+          <div class="full chat-box" id="ping-box"></div>
           <h3 class="full mt">Напоминания по расписанию</h3>
           <label>Обычно начинаю играть в<input name="playStart" placeholder="20:00"></label>
           <label class="chk"><input type="checkbox" name="remindReset"><span>За 30 мин до сброса дня напоминать о несделанных делах</span></label>
@@ -357,6 +365,9 @@
 <script src="ai.js"></script>
 <script src="chat.js"></script>
 <script src="combat.js"></script>
+<script src="data/guides2.js"></script>
+<script src="data/pantheon.js"></script>
+<script src="pantheon.js"></script>
 <script src="update.js"></script>
 <script src="app.js"></script>
 <script defer src="data/mapdata.js"></script>

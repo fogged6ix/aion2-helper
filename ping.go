@@ -28,6 +28,7 @@ var (
 
 type pingWorker struct {
 	mu      sync.Mutex
+	pin     string // закреплённое соединение «ip:порт» (выбрал игрок)
 	on      bool
 	running bool
 	ov      *overlay
@@ -156,66 +157,130 @@ func (p *pingWorker) gamePID() uint32 {
 	return pid
 }
 
+func (p *pingWorker) setPin(addr string) {
+	p.mu.Lock()
+	p.pin = addr
+	p.mu.Unlock()
+}
+
+// замер одного соединения: ICMP, если сервер отвечает, иначе время установки TCP-соединения
+func measure(c tcpConn, icmpOK map[string]bool) (float64, string, bool) {
+	key := c.ip.String()
+	if ok, seen := icmpOK[key]; !seen || ok {
+		if d, got := icmpPing(c.ip, 800*time.Millisecond); got {
+			icmpOK[key] = true
+			return float64(d.Microseconds()) / 1000, "icmp", true
+		}
+		icmpOK[key] = false
+	}
+	if d, got := tcpPing(c, 1500*time.Millisecond); got {
+		return float64(d.Microseconds()) / 1000, "tcp", true
+	}
+	return 0, "", false
+}
+
 func (p *pingWorker) loop() {
 	defer func() {
 		p.mu.Lock()
 		p.running = false
 		p.mu.Unlock()
 	}()
-	icmpOK := true // сервер отвечает на ICMP; если нет — переходим на TCP и замеряем реже
-	var last tcpConn
-	var hist []float64
+	icmpOK := map[string]bool{}
+	hist := map[string][]float64{}
+	n := 0
 	for {
 		p.mu.Lock()
-		on, o := p.on, p.ov
+		on, o, pin := p.on, p.ov, p.pin
 		p.mu.Unlock()
 		if !on || o == nil {
 			return
 		}
 		res := map[string]interface{}{}
-		pid := p.gamePID()
 		wait := 2 * time.Second
+		pid := p.gamePID()
 		if pid == 0 {
 			res["state"] = "nogame"
-			hist = nil
+			hist = map[string][]float64{}
 			wait = 5 * time.Second
-		} else if c, ok := pickServer(tcpConnsOf(pid)); !ok {
-			res["state"] = "noconn"
-			hist = nil
 		} else {
-			if !c.ip.Equal(last.ip) || c.port != last.port {
-				last, hist, icmpOK = c, nil, true
-			}
-			var d time.Duration
-			var got bool
-			method := "icmp"
-			if icmpOK {
-				d, got = icmpPing(c.ip, time.Second)
-				if !got {
-					icmpOK = false
+			conns := tcpConnsOf(pid)
+			// без повторов; сначала не веб-порты, среди них — с большим номером порта
+			seen := map[string]bool{}
+			var uniq []tcpConn
+			for _, c := range conns {
+				k := fmt.Sprintf("%s:%d", c.ip, c.port)
+				if !seen[k] {
+					seen[k] = true
+					uniq = append(uniq, c)
 				}
 			}
-			if !got {
-				method = "tcp"
-				d, got = tcpPing(c, 1500*time.Millisecond)
-				wait = 5 * time.Second
+			sort.SliceStable(uniq, func(i, j int) bool {
+				wi := uniq[i].port == 443 || uniq[i].port == 80
+				wj := uniq[j].port == 443 || uniq[j].port == 80
+				if wi != wj {
+					return !wi
+				}
+				return uniq[i].port > uniq[j].port
+			})
+			if len(uniq) > 6 {
+				uniq = uniq[:6]
 			}
-			res["ip"], res["port"], res["method"] = c.ip.String(), c.port, method
-			if got {
-				ms := float64(d.Microseconds()) / 1000
-				hist = append(hist, ms)
-				if len(hist) > 10 {
-					hist = hist[len(hist)-10:]
-				}
-				var sum float64
-				for _, v := range hist {
-					sum += v
-				}
-				res["state"], res["ms"], res["avg"] = "ok", ms, sum/float64(len(hist))
+			if len(uniq) == 0 {
+				res["state"] = "noconn"
 			} else {
-				res["state"] = "timeout"
+				list := []map[string]interface{}{}
+				chosen := -1
+				for i, c := range uniq {
+					k := fmt.Sprintf("%s:%d", c.ip, c.port)
+					if pin != "" && k == pin {
+						chosen = i
+					}
+				}
+				if chosen < 0 {
+					chosen = 0
+				}
+				for i, c := range uniq {
+					k := fmt.Sprintf("%s:%d", c.ip, c.port)
+					// выбранное соединение меряем каждый раз, остальные — раз в 4 цикла
+					if i != chosen && n%4 != 0 {
+						if h := hist[k]; len(h) > 0 {
+							list = append(list, map[string]interface{}{"addr": k, "ms": h[len(h)-1]})
+						} else {
+							list = append(list, map[string]interface{}{"addr": k})
+						}
+						continue
+					}
+					ms, method, ok := measure(c, icmpOK)
+					item := map[string]interface{}{"addr": k}
+					if ok {
+						h := append(hist[k], ms)
+						if len(h) > 10 {
+							h = h[len(h)-10:]
+						}
+						hist[k] = h
+						item["ms"], item["method"] = ms, method
+					}
+					list = append(list, item)
+					if i == chosen {
+						res["ip"], res["port"] = c.ip.String(), c.port
+						if ok {
+							var sum float64
+							for _, v := range hist[k] {
+								sum += v
+							}
+							res["state"], res["ms"], res["avg"], res["method"] = "ok", ms, sum/float64(len(hist[k])), method
+							if method == "tcp" {
+								wait = 4 * time.Second
+							}
+						} else {
+							res["state"] = "timeout"
+						}
+					}
+				}
+				res["conns"], res["pinned"] = list, pin != "" && uniq[chosen].port != 0 && fmt.Sprintf("%s:%d", uniq[chosen].ip, uniq[chosen].port) == pin
 			}
 		}
+		n++
 		b, _ := json.Marshal(res)
 		a := o.a
 		a.w.Dispatch(func() { a.w.Eval("window.A2Ping && A2Ping.update(" + string(b) + ")") })

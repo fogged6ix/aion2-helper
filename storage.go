@@ -111,7 +111,7 @@ func (s *storage) save(raw string) bool {
 		"_что_это": "Журнал: убийства боссов, выпавшая добыча и фарм-сессии (статистика удачи и доход в час).",
 		"kills":    orEmptyList(st["kills"]), "loot": orEmptyList(st["loot"]),
 		"sessions": orEmptyList(st["sessions"]), "session": st["session"],
-		"combat":   st["combat"],
+		"combat": st["combat"],
 	}))
 	ai, _ := st["ai"].(map[string]interface{})
 	aiPub := map[string]interface{}{}
